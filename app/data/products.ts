@@ -1,92 +1,82 @@
 export default [
   {
     id: 1,
-    name: "Classic Silver Watch",
+    name: "Omega De Ville Prestige",
     brand: "Omega",
     price: 250,
-    image:
-      "https://images.unsplash.com/photo-1516574187841-cb9cc2ca948b?auto=format&fit=crop&w=400&q=80",
+    image: "/imgs/omega_de_ville_prestige.jpg",
     description: "Elegant silver watch with leather strap.",
   },
   {
     id: 2,
-    name: "Sporty Black Watch",
+    name: "Casio G-Shock DW-5600",
     brand: "Casio",
     price: 120,
-    image:
-      "https://images.unsplash.com/photo-1465101046530-73398c7f28ca?auto=format&fit=crop&w=400&q=80",
+    image: "/imgs/casio-g-shock-dw-5600.jpg",
     description: "Durable black watch for active lifestyles.",
   },
   {
     id: 3,
-    name: "Luxury Gold Watch",
+    name: "Rolex Day-Date 40",
     brand: "Rolex",
     price: 1200,
-    image:
-      "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=400&q=80",
+    image: "/imgs/rolex-day-date-40.jpg",
     description: "Premium gold watch for special occasions.",
   },
   {
     id: 4,
-    name: "Minimalist White Watch",
+    name: "Daniel Wellington Classic Petite",
     brand: "Daniel Wellington",
     price: 180,
-    image:
-      "https://images.unsplash.com/photo-1519125323398-675f0ddb6308?auto=format&fit=crop&w=400&q=80",
+    image: "/imgs/daniel-wellington-classic-petite.jpg",
     description: "Simple and clean design for everyday use.",
   },
   {
     id: 5,
-    name: "Digital Blue Watch",
+    name: "Seiko 5 Sports SRPD51",
     brand: "Seiko",
     price: 90,
-    image:
-      "https://images.unsplash.com/photo-1465101178521-c1a9136a3b99?auto=format&fit=crop&w=400&q=80",
+    image: "/imgs/seiko-5-sports-sRPD51.jpg",
     description: "Modern digital watch with blue accents.",
   },
   {
     id: 6,
-    name: "Vintage Brown Watch",
+    name: "Fossil Townsman Chronograph",
     brand: "Fossil",
     price: 200,
-    image:
-      "https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=400&q=80",
+    image: "/imgs/fossil-townsman-chronograph.jpg",
     description: "Classic vintage style with brown leather.",
   },
   {
     id: 7,
-    name: "Smart Fitness Watch",
+    name: "Apple Watch Series 9",
     brand: "Apple",
     price: 350,
-    image:
-      "https://images.unsplash.com/photo-1519864600265-abb23847ef2c?auto=format&fit=crop&w=400&q=80",
+    image: "/imgs/apple-watch-series-9.jpg",
     description: "Track your health and fitness easily.",
   },
   {
     id: 8,
-    name: "Elegant Rose Gold Watch",
+    name: "Michael Kors Parker Rose Gold",
     brand: "Michael Kors",
     price: 300,
-    image:
-      "https://images.unsplash.com/photo-1519125323398-675f0ddb6308?auto=format&fit=crop&w=400&q=80",
+    image: "/imgs/michael-kors-parker-rose-gold.jpg",
     description: "Beautiful rose gold finish for elegance.",
   },
   {
     id: 9,
-    name: "Adventure Green Watch",
+    name: "Garmin Fenix 7X",
     brand: "Garmin",
     price: 400,
-    image:
-      "https://images.unsplash.com/photo-1465101046530-73398c7f28ca?auto=format&fit=crop&w=400&q=80",
+    image: "/imgs/garmin-fenix-7x.jpg",
     description: "Perfect for outdoor adventures.",
   },
   {
     id: 10,
-    name: "Classic Black Watch",
+    name: "Tissot PRX Powermatic 80",
     brand: "Tissot",
     price: 220,
-    image:
-      "https://images.unsplash.com/photo-1465101178521-c1a9136a3b99?auto=format&fit=crop&w=400&q=80",
+    image: "/imgs/tissot-prx-powermatic-80.jpg",
     description: "Timeless black watch for any occasion.",
   },
 ];
