@@ -68,7 +68,7 @@ export default [
     name: "Garmin Fenix 7X",
     brand: "Garmin",
     price: 400,
-    image: "/imgs/garmin-fenix-7x.jpg",
+    image: "/imgs/garmin-fenix-7X.jpg",
     description: "Perfect for outdoor adventures.",
   },
   {

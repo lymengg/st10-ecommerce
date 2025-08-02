@@ -1,207 +1,82 @@
 <template>
-  <UContainer class="py-8">
-    <div v-if="order" class="max-w-4xl mx-auto">
-      <!-- Invoice Header -->
-      <UCard class="mb-8">
-        <div class="flex justify-between items-start mb-6">
-          <div>
-            <h1 class="text-4xl font-bold text-gray-900 mb-2">Invoice</h1>
-            <p class="text-gray-600">Thank you for your purchase!</p>
-          </div>
-          <div class="text-right">
-            <UBadge color="green" variant="soft" size="lg" class="mb-2">
-              Order Confirmed
-            </UBadge>
-            <p class="text-sm text-gray-600">
-              Order #{{ order.orderNumber || "N/A" }}
-            </p>
-          </div>
-        </div>
-
-        <UDivider class="my-6" />
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <!-- Order Details -->
-          <div>
-            <h3 class="text-lg font-semibold text-gray-900 mb-4">
-              Order Details
-            </h3>
-            <div class="space-y-2">
-              <div class="flex justify-between">
-                <span class="text-gray-600">Order Date:</span>
-                <span class="font-medium">{{ formatDate(order.date) }}</span>
-              </div>
-              <div class="flex justify-between">
-                <span class="text-gray-600">Order Number:</span>
-                <span class="font-medium">{{
-                  order.orderNumber || "N/A"
-                }}</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Customer Information -->
-          <div>
-            <h3 class="text-lg font-semibold text-gray-900 mb-4">
-              Customer Information
-            </h3>
-            <div class="space-y-2">
-              <div>
-                <span class="text-gray-600">Name:</span>
-                <p class="font-medium">{{ order.name }}</p>
-              </div>
-              <div>
-                <span class="text-gray-600">Email:</span>
-                <p class="font-medium">{{ order.email }}</p>
-              </div>
-              <div>
-                <span class="text-gray-600">Shipping Address:</span>
-                <p class="font-medium">{{ order.address }}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </UCard>
-
-      <!-- Order Items -->
-      <UCard class="mb-8">
-        <template #header>
-          <h3 class="text-xl font-semibold">Order Items</h3>
-        </template>
-
-        <UTable
-          :columns="[
-            { key: 'name', label: 'Product' },
-            { key: 'qty', label: 'Quantity' },
-            { key: 'price', label: 'Unit Price' },
-            { key: 'total', label: 'Total' },
-          ]"
-          :rows="orderItems"
-        >
-          <template #name-data="{ row }">
-            <div class="flex items-center gap-3">
-              <img
-                :src="row.image"
-                :alt="row.name"
-                class="w-12 h-12 object-cover rounded-lg"
-              />
-              <div>
-                <p class="font-medium text-gray-900">{{ row.name }}</p>
-                <p class="text-sm text-gray-500">{{ row.brand }}</p>
-              </div>
-            </div>
-          </template>
-
-          <template #qty-data="{ row }">
-            <span class="font-medium">{{ row.qty }}</span>
-          </template>
-
-          <template #price-data="{ row }">
-            <span class="font-medium">${{ row.price.toFixed(2) }}</span>
-          </template>
-
-          <template #total-data="{ row }">
-            <span class="font-semibold"
-              >${{ (row.price * row.qty).toFixed(2) }}</span
-            >
-          </template>
-        </UTable>
-
-        <UDivider class="my-6" />
-
-        <div class="flex justify-end">
-          <div class="text-right">
-            <div class="text-2xl font-bold text-primary">
-              Total: ${{ order.total.toFixed(2) }}
-            </div>
-          </div>
-        </div>
-      </UCard>
-
-      <!-- Actions -->
-      <div class="flex flex-col sm:flex-row gap-4 justify-between print:hidden">
-        <UButton to="/" size="lg" color="gray" variant="outline">
-          <template #leading>
-            <Icon name="i-heroicons-arrow-left" />
-          </template>
-          Back to Catalog
-        </UButton>
-
-        <div class="flex gap-4">
-          <UButton
-            @click="printInvoice"
-            size="lg"
-            color="primary"
-            variant="outline"
-          >
-            <template #leading>
-              <Icon name="i-heroicons-printer" />
-            </template>
-            Print Invoice
-          </UButton>
-
-          <UButton to="/cart" size="lg" color="primary">
-            <template #leading>
-              <Icon name="i-heroicons-shopping-cart" />
-            </template>
-            Shop Again
-          </UButton>
-        </div>
+  <UContainer
+    class="py-12 max-w-2xl mx-auto bg-white rounded-xl shadow-lg border border-neutral-200"
+  >
+    <div class="flex items-center justify-between mb-8">
+      <div class="flex items-center gap-2">
+        <Icon name="i-heroicons-clock" class="h-8 w-8 text-primary" />
+        <span class="text-2xl font-bold text-neutral-900">WatchStore</span>
+      </div>
+      <div class="text-right text-sm text-neutral-500">
+        <div>Invoice #INV-20250803</div>
+        <div>{{ new Date().toLocaleDateString() }}</div>
       </div>
     </div>
-
-    <div v-else>
-      <UCard>
-        <div class="text-center py-12">
-          <Icon
-            name="i-heroicons-document-text"
-            class="mx-auto h-16 w-16 text-gray-400 mb-4"
-          />
-          <h2 class="text-2xl font-semibold text-gray-900 mb-4">
-            No order found
-          </h2>
-          <p class="text-gray-600 mb-6">We couldn't find any recent orders.</p>
-          <UButton to="/" size="lg" color="primary">
-            <Icon name="i-heroicons-shopping-bag" />
-            Start Shopping
-          </UButton>
-        </div>
-      </UCard>
+    <div class="mb-8">
+      <h2 class="text-lg font-semibold text-neutral-800 mb-2">Billed To:</h2>
+      <div class="text-neutral-700">
+        John Doe<br />
+        johndoe@email.com<br />
+        123 Main Street, City, Country
+      </div>
+    </div>
+    <div class="mb-8">
+      <h2 class="text-lg font-semibold text-neutral-800 mb-2">Order Summary</h2>
+      <table class="w-full text-sm border-collapse">
+        <thead>
+          <tr class="bg-neutral-100">
+            <th class="p-2 text-left font-semibold">Product</th>
+            <th class="p-2 text-right font-semibold">Qty</th>
+            <th class="p-2 text-right font-semibold">Unit Price</th>
+            <th class="p-2 text-right font-semibold">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="p-2">Omega De Ville Prestige</td>
+            <td class="p-2 text-right">1</td>
+            <td class="p-2 text-right">$250.00</td>
+            <td class="p-2 text-right">$250.00</td>
+          </tr>
+          <tr>
+            <td class="p-2">Apple Watch Series 9</td>
+            <td class="p-2 text-right">2</td>
+            <td class="p-2 text-right">$350.00</td>
+            <td class="p-2 text-right">$700.00</td>
+          </tr>
+        </tbody>
+        <tfoot>
+          <tr class="border-t border-neutral-200">
+            <td colspan="3" class="p-2 text-right font-semibold">Subtotal</td>
+            <td class="p-2 text-right">$950.00</td>
+          </tr>
+          <tr>
+            <td colspan="3" class="p-2 text-right font-semibold">Shipping</td>
+            <td class="p-2 text-right">$0.00</td>
+          </tr>
+          <tr>
+            <td colspan="3" class="p-2 text-right font-bold text-lg">Total</td>
+            <td class="p-2 text-right font-bold text-lg">$950.00</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+    <div class="flex items-center justify-between mt-10">
+      <div class="text-sm text-neutral-500">Thank you for your purchase!</div>
+      <NuxtLink
+        to="/"
+        class="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/80 transition-colors"
+        @click.native="clearCart"
+      >
+        <Icon name="i-heroicons-arrow-left" />
+        Back to Store
+      </NuxtLink>
     </div>
   </UContainer>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from "vue";
-
-const order = ref<any>(null);
-
-function loadOrder() {
-  order.value = JSON.parse(localStorage.getItem("lastOrder") || "null");
+function clearCart() {
+  localStorage.removeItem("cart");
 }
-
-const orderItems = computed(() => {
-  if (!order.value?.cart) return [];
-  return order.value.cart.map((item: any) => ({
-    ...item,
-    total: item.price * item.qty,
-  }));
-});
-
-function printInvoice() {
-  window.print();
-}
-
-function formatDate(dateStr: string) {
-  const d = new Date(dateStr);
-  return d.toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
-onMounted(loadOrder);
 </script>

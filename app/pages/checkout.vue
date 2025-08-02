@@ -1,175 +1,245 @@
 <template>
-  <UContainer class="py-8">
-    <h1 class="text-3xl font-bold mb-8 text-gray-900">Checkout</h1>
-
-    <div v-if="cart.length > 0" class="max-w-4xl mx-auto">
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <!-- Checkout Form -->
-        <UCard>
-          <template #header>
-            <h2 class="text-xl font-semibold">Shipping Information</h2>
-          </template>
-
-          <UForm :state="formState" @submit="submitOrder" class="space-y-6">
-            <UFormGroup label="Full Name" required>
-              <UInput
-                v-model="formState.name"
-                placeholder="Enter your full name"
-                size="lg"
+  <div class="min-h-screen bg-neutral-50 py-10">
+    <div
+      class="max-w-4xl mx-auto bg-white rounded-xl shadow-lg border border-neutral-200 p-8"
+    >
+      <h1 class="text-3xl font-bold mb-8 text-center text-neutral-900">
+        Checkout
+      </h1>
+      <div class="grid md:grid-cols-2 gap-8">
+        <div>
+          <form
+            class="space-y-6"
+            @submit.prevent="submitOrder"
+            :class="
+              orderPlaced ? 'opacity-50 pointer-events-none select-none' : ''
+            "
+          >
+            <h2 class="text-xl font-semibold mb-4 text-neutral-800">
+              Shipping Information
+            </h2>
+            <div>
+              <label class="block mb-1 font-medium text-neutral-700"
+                >Full Name</label
+              >
+              <input
+                v-model="shipping.name"
+                type="text"
                 required
+                class="w-full border border-neutral-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white text-neutral-900"
               />
-            </UFormGroup>
-
-            <UFormGroup label="Email Address" required>
-              <UInput
-                v-model="formState.email"
-                type="email"
-                placeholder="Enter your email"
-                size="lg"
+            </div>
+            <div>
+              <label class="block mb-1 font-medium text-neutral-700"
+                >Address</label
+              >
+              <input
+                v-model="shipping.address"
+                type="text"
                 required
+                class="w-full border border-neutral-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white text-neutral-900"
               />
-            </UFormGroup>
-
-            <UFormGroup label="Shipping Address" required>
-              <UTextarea
-                v-model="formState.address"
-                placeholder="Enter your complete address"
-                :rows="4"
-                required
-              />
-            </UFormGroup>
-
-            <UButton
-              type="submit"
-              size="xl"
-              color="primary"
-              block
-              :loading="isSubmitting"
-            >
-              <template #leading>
-                <Icon name="i-heroicons-credit-card" />
-              </template>
-              Place Order - ${{ total.toFixed(2) }}
-            </UButton>
-          </UForm>
-        </UCard>
-
-        <!-- Order Summary -->
-        <UCard>
-          <template #header>
-            <h2 class="text-xl font-semibold">Order Summary</h2>
-          </template>
-
-          <div class="space-y-4">
-            <div
-              v-for="item in cart"
-              :key="item.id"
-              class="flex items-center gap-3 py-3 border-b border-gray-200 last:border-b-0"
-            >
-              <img
-                :src="item.image"
-                :alt="item.name"
-                class="w-16 h-16 object-cover rounded-lg flex-shrink-0"
-              />
-              <div class="flex-1 min-w-0">
-                <h3 class="font-medium text-gray-900 truncate">
-                  {{ item.name }}
-                </h3>
-                <p class="text-sm text-gray-500">Qty: {{ item.qty }}</p>
+            </div>
+            <div class="flex gap-4">
+              <div class="flex-1">
+                <label class="block mb-1 font-medium text-neutral-700"
+                  >City</label
+                >
+                <input
+                  v-model="shipping.city"
+                  type="text"
+                  required
+                  class="w-full border border-neutral-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white text-neutral-900"
+                />
               </div>
-              <div class="text-right">
-                <p class="font-semibold text-gray-900">
-                  ${{ (item.price * item.qty).toFixed(2) }}
+              <div class="flex-1">
+                <label class="block mb-1 font-medium text-neutral-700"
+                  >Postal Code</label
+                >
+                <input
+                  v-model="shipping.postal"
+                  type="text"
+                  required
+                  class="w-full border border-neutral-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white text-neutral-900"
+                />
+              </div>
+            </div>
+            <div>
+              <label class="block mb-1 font-medium text-neutral-700"
+                >Country</label
+              >
+              <input
+                v-model="shipping.country"
+                type="text"
+                required
+                class="w-full border border-neutral-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white text-neutral-900"
+              />
+            </div>
+            <button
+              type="submit"
+              class="w-full bg-primary text-white py-3 rounded-lg font-semibold mt-6 hover:bg-primary/90 transition"
+            >
+              Place Order
+            </button>
+          </form>
+          <!-- Modal Popup -->
+          <div
+            v-if="orderPlaced"
+            class="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+          >
+            <div
+              class="bg-white border-2 border-green-400 rounded-2xl shadow-2xl px-10 py-12 text-center max-w-lg w-full mx-4 animate-fade-in relative"
+            >
+              <div class="flex flex-col items-center mb-6">
+                <div
+                  class="bg-green-100 rounded-full p-5 mb-5 flex items-center justify-center"
+                >
+                  <svg
+                    class="w-12 h-12 text-green-600"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      stroke-width="2.5"
+                      fill="white"
+                    />
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="M8 12.5l2.5 2.5 5-5"
+                    />
+                  </svg>
+                </div>
+                <h2 class="text-3xl font-extrabold text-green-700 mb-2">
+                  Order Placed!
+                </h2>
+                <p class="text-green-800 text-lg mb-3">
+                  Thank you for your purchase.
                 </p>
               </div>
-            </div>
-
-            <UDivider />
-
-            <div class="flex justify-between items-center text-lg font-bold">
-              <span>Total:</span>
-              <span class="text-primary">${{ total.toFixed(2) }}</span>
+              <p class="text-neutral-700 mb-8 leading-relaxed text-base">
+                Our team will contact you soon to confirm your order.<br />You
+                will also receive an invoice by email.
+              </p>
+              <button
+                @click="previewInvoice"
+                class="bg-primary text-white px-8 py-3 rounded-lg font-semibold text-base shadow hover:bg-primary/90 transition"
+              >
+                <span class="inline-flex items-center gap-2">
+                  <svg
+                    class="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="M9 17v-2a2 2 0 012-2h2a2 2 0 012 2v2m-7 4h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v12a2 2 0 002 2z"
+                    />
+                  </svg>
+                  Preview Invoice
+                </span>
+              </button>
             </div>
           </div>
-        </UCard>
+        </div>
+
+        <!-- Order Summary -->
+        <div
+          class="bg-neutral-50 rounded-xl p-6 border border-neutral-200 h-fit"
+        >
+          <h2 class="text-xl font-semibold mb-4 text-neutral-800">
+            Order Summary
+          </h2>
+          <ul class="divide-y divide-neutral-200 mb-4">
+            <li
+              v-for="item in cart"
+              :key="item.id"
+              class="py-3 flex items-center justify-between gap-4"
+            >
+              <div class="flex items-center gap-3">
+                <img
+                  v-if="item.image"
+                  :src="item.image"
+                  :alt="item.name"
+                  class="w-12 h-12 object-cover rounded border border-neutral-200 bg-white"
+                />
+                <div>
+                  <span class="font-medium text-neutral-900">{{
+                    item.name
+                  }}</span>
+                  <span class="block text-sm text-neutral-500"
+                    >x{{ item.qty }}</span
+                  >
+                </div>
+              </div>
+              <span class="font-semibold text-neutral-900"
+                >${{ (item.price * item.qty).toFixed(2) }}</span
+              >
+            </li>
+          </ul>
+          <div class="flex justify-between font-semibold text-lg">
+            <span class="text-neutral-700">Total</span>
+            <span class="text-primary">${{ totalPrice.toFixed(2) }}</span>
+          </div>
+        </div>
       </div>
     </div>
-
-    <div v-else>
-      <UCard>
-        <div class="text-center py-12">
-          <Icon
-            name="i-heroicons-shopping-cart"
-            class="mx-auto h-16 w-16 text-gray-400 mb-4"
-          />
-          <h2 class="text-2xl font-semibold text-gray-900 mb-4">
-            Your cart is empty
-          </h2>
-          <p class="text-gray-600 mb-6">
-            Add some items to your cart before checking out.
-          </p>
-          <UButton to="/" size="lg" color="primary">
-            <Icon name="i-heroicons-shopping-bag" />
-            Start Shopping
-          </UButton>
-        </div>
-      </UCard>
-    </div>
-  </UContainer>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, reactive } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
 
-const cart = ref<any[]>([]);
-const router = useRouter();
-const toast = useToast();
-const isSubmitting = ref(false);
-
-const formState = reactive({
-  name: "",
-  email: "",
-  address: "",
-});
+type CartItem = {
+  id: number;
+  name: string;
+  price: number;
+  qty: number;
+  image?: string;
+};
+const cart = ref<CartItem[]>([]);
 
 function loadCart() {
   cart.value = JSON.parse(localStorage.getItem("cart") || "[]");
 }
 
-const total = computed(() =>
+onMounted(loadCart);
+
+const totalPrice = computed(() =>
   cart.value.reduce((sum, item) => sum + item.price * item.qty, 0)
 );
 
-async function submitOrder() {
-  isSubmitting.value = true;
+const shipping = ref({
+  name: "",
+  address: "",
+  city: "",
+  postal: "",
+  country: "",
+});
 
-  // Simulate processing time
-  await new Promise((resolve) => setTimeout(resolve, 1500));
+const router = useRouter();
+const orderPlaced = ref(false);
 
-  const order = {
-    name: formState.name,
-    email: formState.email,
-    address: formState.address,
-    cart: cart.value,
-    total: total.value,
-    date: new Date().toISOString(),
-    orderNumber: `ORD-${Date.now()}`,
-  };
-
-  localStorage.setItem("lastOrder", JSON.stringify(order));
-  localStorage.removeItem("cart");
-
-  toast.add({
-    title: "Order placed successfully!",
-    description: `Order #${order.orderNumber} has been confirmed.`,
-    color: "green",
-    icon: "i-heroicons-check-circle",
-  });
-
-  isSubmitting.value = false;
-  router.push("/invoice");
+function submitOrder() {
+  // Here you would handle order submission, validation, and API calls
+  orderPlaced.value = true;
 }
 
-onMounted(loadCart);
+function previewInvoice() {
+  router.push("/invoice");
+}
 </script>
+
+<style scoped>
+/* Add any custom styles here if needed */
+</style>

@@ -45,13 +45,30 @@
 
       <!-- Footer -->
       <footer
-        class="w-full bg-white text-neutral-500 mt-16 border-t border-neutral-200"
+        class="w-full bg-white text-neutral-600 mt-16 border-t border-neutral-200"
       >
         <UContainer>
-          <div class="py-8 text-center">
-            <p class="text-neutral-500">
-              &copy; 2025 WatchStore. Built with Nuxt UI.
-            </p>
+          <div
+            class="flex flex-col md:flex-row items-center justify-between py-8 gap-6"
+          >
+            <div class="flex items-center gap-2">
+              <Icon name="i-heroicons-clock" class="h-7 w-7 text-primary" />
+              <span class="text-xl font-bold text-neutral-900">WatchStore</span>
+            </div>
+            <nav
+              class="flex gap-6 text-sm order-3 md:order-none md:flex-1 md:justify-center md:items-center md:flex md:mx-0 mx-auto"
+            >
+              <NuxtLink to="/" class="hover:text-primary transition-colors"
+                >Catalog</NuxtLink
+              >
+              <NuxtLink to="/cart" class="hover:text-primary transition-colors"
+                >Cart</NuxtLink
+              >
+              <a class="hover:text-primary transition-colors">Contact</a>
+            </nav>
+            <div class="text-xs text-neutral-400 text-center md:text-right">
+              <div>&copy; 2025 WatchStore. All rights reserved.</div>
+            </div>
           </div>
         </UContainer>
       </footer>
