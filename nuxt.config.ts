@@ -12,6 +12,8 @@ export default defineNuxtConfig({
     },
   },
 
+  postcss: {},
+
   css: ["~/assets/css/main.css"],
 
   // App configuration

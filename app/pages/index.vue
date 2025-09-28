@@ -231,6 +231,8 @@
 <script setup lang="ts">
 import products from "@/data/products";
 import { ref, computed } from "vue";
+import { useAuth } from "../composables/useAuth";
+import { useRouter } from "vue-router";
 
 // Filter state
 const selectedBrand = ref("");
@@ -328,6 +330,16 @@ const filteredProducts = computed(() => {
 
   return filtered;
 });
+
+const { user, isAuthenticated } = useAuth();
+const router = useRouter();
+
+// On mount, check if user is admin
+if (process.client) {
+  if (!isAuthenticated.value || !user.value || user.value.role !== "admin") {
+    router.replace("/"); // Redirect non-admins to home
+  }
+}
 </script>
 
 <style scoped>

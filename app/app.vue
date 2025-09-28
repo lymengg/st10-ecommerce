@@ -32,6 +32,62 @@
                 <Icon name="i-heroicons-shopping-cart" class="mr-2" />
                 Cart
               </UButton>
+              <template v-if="!isAuthenticated">
+                <UButton
+                  to="/login"
+                  variant="ghost"
+                  color="primary"
+                  class="text-neutral-900 hover:bg-neutral-100"
+                >
+                  <Icon
+                    name="i-heroicons-arrow-right-on-rectangle"
+                    class="mr-2"
+                  />
+                  Login
+                </UButton>
+                <UButton
+                  to="/register"
+                  variant="ghost"
+                  color="primary"
+                  class="text-neutral-900 hover:bg-neutral-100"
+                >
+                  <Icon name="i-heroicons-user-plus" class="mr-2" />
+                  Register
+                </UButton>
+              </template>
+              <template v-else>
+                <UButton
+                  v-if="user && user.role === 'admin'"
+                  to="/admin/products/create"
+                  variant="solid"
+                  color="primary"
+                  class="text-neutral-900"
+                >
+                  <Icon name="i-heroicons-plus-circle" class="mr-2" />
+                  Create Product
+                </UButton>
+                <UButton
+                  to="/profile"
+                  variant="ghost"
+                  color="primary"
+                  class="text-neutral-900 hover:bg-neutral-100"
+                >
+                  <Icon name="i-heroicons-user-circle" class="mr-2" />
+                  Profile
+                </UButton>
+                <UButton
+                  @click="logout"
+                  variant="ghost"
+                  color="primary"
+                  class="text-neutral-900 hover:bg-neutral-100"
+                >
+                  <Icon
+                    name="i-heroicons-arrow-left-on-rectangle"
+                    class="mr-2"
+                  />
+                  Logout
+                </UButton>
+              </template>
             </nav>
           </div>
         </UContainer>
@@ -64,6 +120,30 @@
               <NuxtLink to="/cart" class="hover:text-primary transition-colors"
                 >Cart</NuxtLink
               >
+              <template v-if="!isAuthenticated">
+                <NuxtLink
+                  to="/login"
+                  class="hover:text-primary transition-colors"
+                  >Login</NuxtLink
+                >
+                <NuxtLink
+                  to="/register"
+                  class="hover:text-primary transition-colors"
+                  >Register</NuxtLink
+                >
+              </template>
+              <template v-else>
+                <NuxtLink
+                  to="/profile"
+                  class="hover:text-primary transition-colors"
+                  >Profile</NuxtLink
+                >
+                <a
+                  @click.prevent="logout"
+                  class="hover:text-primary transition-colors cursor-pointer"
+                  >Logout</a
+                >
+              </template>
               <a class="hover:text-primary transition-colors">Contact</a>
             </nav>
             <div class="text-xs text-neutral-400 text-center md:text-right">
@@ -80,6 +160,7 @@
 </template>
 
 <script setup lang="ts">
+import { useAuth } from "./composables/useAuth";
 // Set page title
 useHead({
   title: "WatchStore - Premium Watches Collection",
@@ -90,4 +171,5 @@ useHead({
     },
   ],
 });
+const { isAuthenticated, logout, user } = useAuth();
 </script>
