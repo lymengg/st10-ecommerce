@@ -57,16 +57,6 @@
               </template>
               <template v-else>
                 <UButton
-                  v-if="user && user.role === 'admin'"
-                  to="/admin/products/create"
-                  variant="solid"
-                  color="primary"
-                  class="text-neutral-900"
-                >
-                  <Icon name="i-heroicons-plus-circle" class="mr-2" />
-                  Create Product
-                </UButton>
-                <UButton
                   to="/profile"
                   variant="ghost"
                   color="primary"
@@ -74,6 +64,25 @@
                 >
                   <Icon name="i-heroicons-user-circle" class="mr-2" />
                   Profile
+                </UButton>
+                <UButton
+                  to="/orders"
+                  variant="ghost"
+                  color="primary"
+                  class="text-neutral-900 hover:bg-neutral-100"
+                >
+                  <Icon name="i-heroicons-clipboard-document-list" class="mr-2" />
+                  Orders
+                </UButton>
+                <UButton
+                  v-if="user?.role === 'admin'"
+                  to="/admin/orders"
+                  variant="ghost"
+                  color="primary"
+                  class="text-neutral-900 hover:bg-neutral-100"
+                >
+                  <Icon name="i-heroicons-cog-8-tooth" class="mr-2" />
+                  Admin Orders
                 </UButton>
                 <UButton
                   @click="logout"
@@ -136,13 +145,20 @@
                 <NuxtLink
                   to="/profile"
                   class="hover:text-primary transition-colors"
-                  >Profile</NuxtLink
-                >
+                  >Profile</NuxtLink>
+                <NuxtLink
+                  to="/orders"
+                  class="hover:text-primary transition-colors"
+                  >Orders</NuxtLink>
+                <NuxtLink
+                  v-if="user?.role === 'admin'"
+                  to="/admin/orders"
+                  class="hover:text-primary transition-colors"
+                  >Admin Orders</NuxtLink>
                 <a
                   @click.prevent="logout"
                   class="hover:text-primary transition-colors cursor-pointer"
-                  >Logout</a
-                >
+                  >Logout</a>
               </template>
               <a class="hover:text-primary transition-colors">Contact</a>
             </nav>

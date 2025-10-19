@@ -58,7 +58,6 @@
 import { ref } from "vue";
 import * as yup from "yup";
 import { useToast } from "#imports";
-import { useApi } from "../composables/useApi";
 import { useAuth } from "../composables/useAuth";
 
 const router = useRouter();
@@ -78,43 +77,24 @@ const state = ref({
 
 const toast = useToast();
 
-const { request } = useApi();
-const { login } = useAuth();
+const { login: apiLogin } = useAuth();
 
 async function onSubmit({ data }: { data: typeof state.value }) {
   try {
-    const res = await request("/api/auth/login", {
-      method: "POST",
-      body: new URLSearchParams({
-        username: data.username,
-        password: data.password,
-      }),
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    });
+    const res: any = await apiLogin(data.username, data.password);
 
     if (res.status === "success") {
-      login(res.data.access_token, {
-        username: res.data.username,
-        role: res.data.role,
-      });
       toast.add({ title: "Login successful", color: "success" });
-      // Optionally redirect to home
       router.push("/");
     } else {
       toast.add({
         title: "Login failed",
-        description: res.data || res.detail || "Login failed",
+        description: res.data || (res as any)?.detail || "Login failed",
         color: "error",
       });
     }
   } catch (e: any) {
-    const errorMsg =
-      e?.response?._data?.data ||
-      e?.response?._data?.detail ||
-      e.data?.data ||
-      e.data?.detail ||
-      e.message ||
-      "Login failed";
+    const errorMsg = e?.data?.data || e?.data?.detail || e?.message || "Login failed";
     toast.add({
       title: "Login failed",
       description: errorMsg,

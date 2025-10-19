@@ -54,6 +54,11 @@
         <div class="mt-6 flex justify-end">
           <UButton type="submit" color="primary">Create Product</UButton>
         </div>
+        <div v-if="created" class="mt-4 flex justify-end">
+          <UButton to="/admin/products" variant="soft" color="neutral">
+            Go to Product List
+          </UButton>
+        </div>
       </UForm>
     </UCard>
   </div>
@@ -62,6 +67,9 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { useToast } from "#imports";
+import { useApi } from "../../../composables/useApi";
+
+definePageMeta({ middleware: "admin" });
 
 const state = ref({
   name: "",
@@ -71,6 +79,7 @@ const state = ref({
   stock: 0,
   image: "",
 });
+const created = ref(false);
 
 const { request } = useApi();
 const toast = useToast();
@@ -87,23 +96,20 @@ function onFileChange(event: Event) {
 
 async function onSubmit() {
   try {
-    const token = localStorage.getItem("token");
     await request("/api/products/", {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       body: {
         ...state.value,
       },
     });
     toast.add({ title: "Product created successfully", color: "success" });
-    // Optionally redirect or reset form
+    created.value = true;
   } catch (e: any) {
     toast.add({
       title: "Failed to create product",
-      description: e.data?.data || e.message || "Error",
+      description:
+        e?.data?.data || e?.data || e?.message || JSON.stringify(e) || "Error",
       color: "error",
     });
   }

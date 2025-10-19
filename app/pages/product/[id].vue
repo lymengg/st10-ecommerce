@@ -94,42 +94,70 @@
 
 <script setup lang="ts">
 import { useRoute, useRouter } from "vue-router";
-import products from "@/data/products";
-import { ref } from "vue";
+import fallbackProducts from "@/data/products";
+import { ref, onMounted } from "vue";
+import { useApi } from "../../composables/useApi";
 
 const route = useRoute();
 const router = useRouter();
 const productId = Number(route.params.id);
-const product = products.find((p) => p.id === productId);
+const product = ref<any | null>(null);
+const { request } = useApi();
+
+onMounted(async () => {
+  // Try API first
+  try {
+    const res: any = await request(`/api/products/${productId}`, {
+      method: "GET",
+    });
+    if (res?.status === "success" && res.data) {
+      product.value = res.data;
+      return;
+    }
+    if (res && !res.status && typeof res === "object") {
+      product.value = res as any;
+      return;
+    }
+  } catch (e) {
+    // ignore and fallback
+  }
+
+  // Fallback to local data
+  product.value = fallbackProducts.find((p) => p.id === productId) || null;
+});
 const isAddingToCart = ref(false);
 
 const toast = useToast();
 
 async function addToCart() {
-  if (!product) return;
-
+  if (!product.value) return;
   isAddingToCart.value = true;
 
-  // Simulate loading for better UX
-  await new Promise((resolve) => setTimeout(resolve, 500));
+  try {
+    // Optional small delay for UX consistency
+    await new Promise((resolve) => setTimeout(resolve, 300));
 
-  // Simple localStorage cart for demo
-  const cart = JSON.parse(localStorage.getItem("cart") || "[]");
-  const existing = cart.find((item: any) => item.id === product.id);
-  if (existing) {
-    existing.qty += 1;
-  } else {
-    cart.push({ ...product, qty: 1 });
+    await request("/api/cart/items", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: { product_id: product.value.id, quantity: 1 },
+    });
+
+    toast.add({
+      title: "Added to cart!",
+      description: `${product.value?.name} has been added to your cart.`,
+      color: "neutral",
+      icon: "i-heroicons-check-circle",
+    });
+  } catch (e: any) {
+    toast.add({
+      title: "Failed to add to cart",
+      description: e?.data || e?.message || "Error",
+      color: "error",
+      icon: "i-heroicons-exclamation-triangle",
+    });
+  } finally {
+    isAddingToCart.value = false;
   }
-  localStorage.setItem("cart", JSON.stringify(cart));
-
-  toast.add({
-    title: "Added to cart!",
-    description: `${product.name} has been added to your cart.`,
-    color: "neutral",
-    icon: "i-heroicons-check-circle",
-  });
-
-  isAddingToCart.value = false;
 }
 </script>

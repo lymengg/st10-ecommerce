@@ -5,6 +5,14 @@
       <p class="text-gray-700 text-lg">
         Discover our premium collection of luxury timepieces
       </p>
+      <div v-if="isAuthenticated && user?.role === 'admin'" class="mt-4">
+        <UButton to="/admin/products" color="primary" variant="solid">
+          <template #leading>
+            <Icon name="i-heroicons-cog-6-tooth" />
+          </template>
+          Manage Products
+        </UButton>
+      </div>
     </div>
 
     <!-- Simple Filter Bar -->
@@ -165,9 +173,10 @@
         <!-- Product Image -->
         <div class="relative aspect-square overflow-hidden bg-white">
           <img
-            :src="product.image"
+            :src="normalizeImage(product.image)"
             :alt="product.name"
             class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            @error="onImageError"
           />
           <!-- Wishlist Button -->
           <button
@@ -229,10 +238,13 @@
 </template>
 
 <script setup lang="ts">
-import products from "@/data/products";
-import { ref, computed } from "vue";
+import fallbackProducts from "@/data/products";
+import { ref, computed, onMounted } from "vue";
+import { useApi } from "../composables/useApi";
 import { useAuth } from "../composables/useAuth";
 import { useRouter } from "vue-router";
+
+const { user, isAuthenticated } = useAuth();
 
 // Filter state
 const selectedBrand = ref("");
@@ -241,9 +253,11 @@ const maxPrice = ref<number | null>(null);
 const sortBy = ref("");
 const searchQuery = ref("");
 
+const products = ref<any[]>(fallbackProducts.slice());
+
 // Brand options
 const brands = computed(() =>
-  Array.from(new Set(products.map((p) => p.brand)))
+  Array.from(new Set(products.value.map((p) => p.brand)))
 );
 
 const brandOptions = computed(() => [
@@ -282,7 +296,7 @@ const clearAllFilters = () => {
 
 // Filtered and sorted products
 const filteredProducts = computed(() => {
-  let filtered = products.filter((p) => {
+  let filtered = products.value.filter((p) => {
     // Brand filter
     const brandMatch = !selectedBrand.value || p.brand === selectedBrand.value;
 
@@ -331,15 +345,45 @@ const filteredProducts = computed(() => {
   return filtered;
 });
 
-const { user, isAuthenticated } = useAuth();
-const router = useRouter();
+// Load products from API on mount
+const { request } = useApi();
 
-// On mount, check if user is admin
-if (process.client) {
-  if (!isAuthenticated.value || !user.value || user.value.role !== "admin") {
-    router.replace("/"); // Redirect non-admins to home
-  }
+// Basic image helpers to avoid broken src when backend sends raw base64 or empty values
+// Use a data URI placeholder to avoid 404 loops
+const placeholderImg = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw=="; // 1x1 transparent gif
+function normalizeImage(img?: string | null) {
+  if (!img) return placeholderImg;
+  const s = String(img).trim();
+  if (s.startsWith("data:image/")) return s; // already a data URL
+  // If it looks like raw base64, wrap into a data URL (assume jpeg)
+  if (/^[A-Za-z0-9+/=]+$/.test(s) && s.length > 100) return `data:image/jpeg;base64,${s}`;
+  // Otherwise return as-is (supports absolute http(s) URLs and app-relative /imgs/...)
+  return s;
 }
+function onImageError(e: Event) {
+  const el = e.target as HTMLImageElement;
+  if (!el) return;
+  // Prevent endless loops if the placeholder fails or src keeps erroring
+  el.onerror = null;
+  el.src = placeholderImg;
+}
+
+onMounted(async () => {
+  try {
+    const res: any = await request("/api/products/", { method: "GET" });
+    // assume backend returns array or { status: 'success', data: [...] }
+    if (Array.isArray(res)) {
+      products.value = res;
+    } else if (res?.status === "success" && Array.isArray(res.data)) {
+      products.value = res.data;
+    }
+  } catch (e) {
+    // leave fallback products in place
+    // Optionally log to console for debugging
+    // console.warn('Failed to load products from API, using local fallback', e);
+  }
+});
+
 </script>
 
 <style scoped>

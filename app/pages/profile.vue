@@ -3,9 +3,9 @@
     <UCard class="p-0">
       <div class="flex flex-col items-center gap-3 p-6">
         <Icon name="i-heroicons-user-circle" class="h-20 w-20 text-primary" />
-        <h2 class="text-2xl font-bold text-neutral-900">{{ user.username }}</h2>
-        <div class="text-neutral-500 mt-1">{{ user.email }}</div>
-        <div class="text-neutral-500">{{ user.phone_number }}</div>
+<h2 class="text-2xl font-bold text-neutral-900">{{ user?.username }}</h2>
+        <div class="text-neutral-500 mt-1">{{ user?.email }}</div>
+        <div class="text-neutral-500">{{ user?.phone_number }}</div>
         <UButton
           @click="editProfile"
           class="mt-4"
@@ -114,30 +114,7 @@
 import { ref } from "vue";
 import { useAuth } from "../composables/useAuth";
 
-const { logout } = useAuth();
-
-const user = ref({
-  username: "",
-  email: "",
-  phone_number: "",
-});
-
-async function fetchProfile() {
-  try {
-    const token = localStorage.getItem("token");
-    if (!token) return; // Optionally redirect to login
-    const res = await $fetch("http://localhost:8000/api/auth/profile", {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-    if (res.status === "success") {
-      user.value = res.data;
-    }
-  } catch (e) {
-    // Optionally handle error (e.g., logout, redirect)
-  }
-}
+const { user, profile, logout } = useAuth();
 
 // Example orders and addresses, replace with real API data
 const orders = ref([
@@ -174,7 +151,9 @@ function viewAllOrders() {
   /* navigate to full order history page */
 }
 
-onMounted(() => {
-  fetchProfile();
+onMounted(async () => {
+  try {
+    await profile();
+  } catch {}
 });
 </script>

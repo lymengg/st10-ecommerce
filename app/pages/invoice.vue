@@ -1,82 +1,71 @@
 <template>
-  <UContainer
-    class="py-12 max-w-2xl mx-auto bg-white rounded-xl shadow-lg border border-neutral-200"
-  >
-    <div class="flex items-center justify-between mb-8">
-      <div class="flex items-center gap-2">
-        <Icon name="i-heroicons-clock" class="h-8 w-8 text-primary" />
-        <span class="text-2xl font-bold text-neutral-900">WatchStore</span>
+  <div class="min-h-screen p-6">
+    <div class="max-w-3xl mx-auto bg-white border border-neutral-200 rounded-xl p-8">
+      <h1 class="text-2xl font-bold mb-4">Invoice</h1>
+      <div v-if="loading">Loading invoice...</div>
+      <div v-else-if="error" class="text-red-600">{{ error }}</div>
+      <div v-else-if="invoice">
+        <div class="mb-4 text-neutral-700">Order #{{ invoice.order_id }} • {{ invoice.status }}</div>
+        <div class="mb-4">
+          <h2 class="font-semibold mb-2">Billing</h2>
+          <div>{{ invoice.billing?.name }} • {{ invoice.billing?.phone }}</div>
+          <div class="text-sm text-neutral-600">
+            {{ invoice.billing?.address?.line1 }}
+            <template v-if="invoice.billing?.address?.line2">, {{ invoice.billing?.address?.line2 }}</template>
+            , {{ invoice.billing?.address?.city }}
+            <template v-if="invoice.billing?.address?.state">, {{ invoice.billing?.address?.state }}</template>
+            , {{ invoice.billing?.address?.postal_code }}, {{ invoice.billing?.address?.country }}
+          </div>
+        </div>
+        <div>
+          <h2 class="font-semibold mb-2">Items</h2>
+          <ul class="divide-y divide-neutral-200">
+            <li v-for="(it, idx) in invoice.items" :key="idx" class="py-2 flex justify-between">
+              <div>
+                <div class="font-medium">{{ it.name }}</div>
+                <div class="text-sm text-neutral-600">x{{ it.quantity }}</div>
+              </div>
+              <div class="font-medium">${{ (it.unit_price * it.quantity).toFixed(2) }}</div>
+            </li>
+          </ul>
+          <div class="mt-4 flex justify-between font-semibold">
+            <span>Total items: {{ invoice.total_items }}</span>
+            <span>Subtotal: ${{ Number(invoice.subtotal).toFixed(2) }}</span>
+          </div>
+        </div>
       </div>
-      <div class="text-right text-sm text-neutral-500">
-        <div>Invoice #INV-20250803</div>
-        <div>{{ new Date().toLocaleDateString() }}</div>
+      <div class="mt-6">
+        <NuxtLink to="/" class="border px-4 py-2 rounded-lg">Continue shopping</NuxtLink>
       </div>
     </div>
-    <div class="mb-8">
-      <h2 class="text-lg font-semibold text-neutral-800 mb-2">Billed To:</h2>
-      <div class="text-neutral-700">
-        John Doe<br />
-        johndoe@email.com<br />
-        123 Main Street, City, Country
-      </div>
-    </div>
-    <div class="mb-8">
-      <h2 class="text-lg font-semibold text-neutral-800 mb-2">Order Summary</h2>
-      <table class="w-full text-sm border-collapse">
-        <thead>
-          <tr class="bg-neutral-100">
-            <th class="p-2 text-left font-semibold">Product</th>
-            <th class="p-2 text-right font-semibold">Qty</th>
-            <th class="p-2 text-right font-semibold">Unit Price</th>
-            <th class="p-2 text-right font-semibold">Total</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td class="p-2">Omega De Ville Prestige</td>
-            <td class="p-2 text-right">1</td>
-            <td class="p-2 text-right">$250.00</td>
-            <td class="p-2 text-right">$250.00</td>
-          </tr>
-          <tr>
-            <td class="p-2">Apple Watch Series 9</td>
-            <td class="p-2 text-right">2</td>
-            <td class="p-2 text-right">$350.00</td>
-            <td class="p-2 text-right">$700.00</td>
-          </tr>
-        </tbody>
-        <tfoot>
-          <tr class="border-t border-neutral-200">
-            <td colspan="3" class="p-2 text-right font-semibold">Subtotal</td>
-            <td class="p-2 text-right">$950.00</td>
-          </tr>
-          <tr>
-            <td colspan="3" class="p-2 text-right font-semibold">Shipping</td>
-            <td class="p-2 text-right">$0.00</td>
-          </tr>
-          <tr>
-            <td colspan="3" class="p-2 text-right font-bold text-lg">Total</td>
-            <td class="p-2 text-right font-bold text-lg">$950.00</td>
-          </tr>
-        </tfoot>
-      </table>
-    </div>
-    <div class="flex items-center justify-between mt-10">
-      <div class="text-sm text-neutral-500">Thank you for your purchase!</div>
-      <NuxtLink
-        to="/"
-        class="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/80 transition-colors"
-        @click.native="clearCart"
-      >
-        <Icon name="i-heroicons-arrow-left" />
-        Back to Store
-      </NuxtLink>
-    </div>
-  </UContainer>
+  </div>
 </template>
 
 <script setup lang="ts">
-function clearCart() {
-  localStorage.removeItem("cart");
-}
+import { onMounted, ref } from 'vue';
+import { useRoute } from 'vue-router';
+import { useCheckoutApi } from '~/composables/useCheckout';
+
+const route = useRoute();
+const { getInvoice } = useCheckoutApi();
+
+const orderId = Number(route.query.order_id || 0);
+const invoice = ref<any | null>(null);
+const loading = ref(false);
+const error = ref('');
+
+onMounted(async () => {
+  if (!orderId) {
+    error.value = 'Missing order_id';
+    return;
+  }
+  try {
+    loading.value = true;
+    invoice.value = await getInvoice(orderId);
+  } catch (e: any) {
+    error.value = e?.data || e?.message || 'Failed to load invoice';
+  } finally {
+    loading.value = false;
+  }
+});
 </script>

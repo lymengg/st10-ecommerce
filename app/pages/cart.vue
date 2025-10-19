@@ -113,45 +113,112 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from "vue";
+import { useApi } from "../composables/useApi";
 
 const cart = ref<any[]>([]);
 const toast = useToast();
+const { request } = useApi();
+const serverSubtotal = ref<number | null>(null);
+const serverTotalItems = ref<number | null>(null);
 
-function loadCart() {
-  cart.value = JSON.parse(localStorage.getItem("cart") || "[]");
+async function fetchCart() {
+  try {
+    const res: any = await request("/api/cart", { method: "GET" });
+    const payload: any = res?.data ?? res;
+    const list = Array.isArray(payload?.items) ? payload.items : [];
+    serverSubtotal.value =
+      typeof payload?.subtotal === "number"
+        ? payload.subtotal
+        : Number(payload?.subtotal) || 0;
+    serverTotalItems.value =
+      typeof payload?.total_items === "number"
+        ? payload.total_items
+        : Number(payload?.total_items) || null;
+
+    cart.value = list.map((it: any) => {
+      const p = it.product || {};
+      return {
+        id: p.id,
+        name: p.name,
+        brand: p.brand,
+        image: p.image,
+        price: p.price,
+        qty: it.quantity ?? 1,
+      };
+    });
+  } catch (e) {
+    cart.value = [];
+    serverSubtotal.value = 0;
+    serverTotalItems.value = 0;
+  }
 }
 
-function updateQty(item: any, change: number) {
+async function updateQty(item: any, change: number) {
   const idx = cart.value.findIndex((i) => i.id === item.id);
-  if (idx !== -1) {
-    cart.value[idx].qty += change;
-    if (cart.value[idx].qty < 1) cart.value[idx].qty = 1;
-    localStorage.setItem("cart", JSON.stringify(cart.value));
+  if (idx === -1) return;
+  const nextQty = Math.max(1, cart.value[idx].qty + change);
+
+  // Optimistic UI update
+  const prevQty = cart.value[idx].qty;
+  cart.value[idx].qty = nextQty;
+
+  try {
+    await request(`/api/cart/items/${item.id}`, {
+      method: "patch",
+      headers: { "Content-Type": "application/json" },
+      body: { quantity: nextQty },
+    });
 
     toast.add({
       title: "Cart updated",
-      description: `${item.name} quantity updated to ${cart.value[idx].qty}`,
+      description: `${item.name} quantity updated to ${nextQty}`,
       color: "primary",
       icon: "i-heroicons-shopping-cart",
+    });
+
+    // Optionally re-fetch to sync server-calculated values
+    fetchCart();
+  } catch (e: any) {
+    // Revert on error
+    cart.value[idx].qty = prevQty;
+    toast.add({
+      title: "Failed to update cart",
+      description: e?.data || e?.message || "Error",
+      color: "error",
+      icon: "i-heroicons-exclamation-triangle",
     });
   }
 }
 
-function removeItem(item: any) {
+async function removeItem(item: any) {
+  const prev = [...cart.value];
   cart.value = cart.value.filter((i) => i.id !== item.id);
-  localStorage.setItem("cart", JSON.stringify(cart.value));
 
-  toast.add({
-    title: "Item removed",
-    description: `${item.name} has been removed from your cart`,
-    color: "warning",
-    icon: "i-heroicons-trash",
-  });
+  try {
+    await request(`/api/cart/items/${item.id}`, { method: "DELETE" });
+    toast.add({
+      title: "Item removed",
+      description: `${item.name} has been removed from your cart`,
+      color: "warning",
+      icon: "i-heroicons-trash",
+    });
+    // Ensure sync with server
+    fetchCart();
+  } catch (e: any) {
+    cart.value = prev;
+    toast.add({
+      title: "Failed to remove item",
+      description: e?.data || e?.message || "Error",
+      color: "error",
+      icon: "i-heroicons-exclamation-triangle",
+    });
+  }
 }
 
-const total = computed(() =>
-  cart.value.reduce((sum, item) => sum + item.price * item.qty, 0)
-);
+const total = computed(() => {
+  if (serverSubtotal.value !== null) return Number(serverSubtotal.value) || 0;
+  return cart.value.reduce((sum, item) => sum + item.price * item.qty, 0);
+});
 
-onMounted(loadCart);
+onMounted(fetchCart);
 </script>
