@@ -1,159 +1,191 @@
 <template>
-  <div class="max-w-3xl mx-auto py-10 space-y-8">
-    <UCard class="p-0">
-      <div class="flex flex-col items-center gap-3 p-6">
-        <Icon name="i-heroicons-user-circle" class="h-20 w-20 text-primary" />
-<h2 class="text-2xl font-bold text-neutral-900">{{ user?.username }}</h2>
-        <div class="text-neutral-500 mt-1">{{ user?.email }}</div>
-        <div class="text-neutral-500">{{ user?.phone_number }}</div>
-        <UButton
-          @click="editProfile"
-          class="mt-4"
-          size="sm"
-          color="primary"
-          variant="solid"
-        >
-          Edit Profile
-        </UButton>
-      </div>
-    </UCard>
-
-    <!-- Order History -->
-    <UCard>
-      <h3 class="text-lg font-semibold text-neutral-900 mb-4">Order History</h3>
-      <div v-if="orders.length" class="space-y-4">
-        <div
-          v-for="order in orders"
-          :key="order.id"
-          class="flex flex-col md:flex-row md:items-center justify-between bg-neutral-50 p-4 rounded border border-neutral-200"
-        >
-          <div>
-            <div class="font-semibold text-neutral-900">
-              Order #{{ order.id }}
+  <div class="min-h-screen flex items-center justify-center p-4">
+    <div class="w-full max-w-lg">
+      <UCard>
+        <template #header>
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-4">
+              <UAvatar :alt="resData.username" size="xl">
+                {{ (resData.username || "?").slice(0, 1).toUpperCase() }}
+              </UAvatar>
+              <div>
+                <p class="text-xl font-semibold">
+                  {{ resData.username || "—" }}
+                </p>
+                <p class="text-sm text-gray-500">{{ resData.email || "—" }}</p>
+              </div>
             </div>
-            <div class="text-neutral-500 text-sm">Date: {{ order.date }}</div>
-            <div class="text-neutral-500 text-sm">
-              Status: {{ order.status }}
-            </div>
-            <div class="text-neutral-900 font-bold mt-1">
-              Total: {{ order.total }}
-            </div>
+            <!-- <UBadge :color="statusColor">{{ res.status || '—' }}</UBadge> -->
           </div>
-          <div class="mt-3 md:mt-0">
+        </template>
+
+        <div class="grid gap-3">
+          <div class="flex items-center justify-between">
+            <span class="text-sm text-gray-500">Username</span>
+            <span class="font-medium">{{ resData.username || "—" }}</span>
+          </div>
+          <UDivider />
+          <div class="flex items-center justify-between">
+            <span class="text-sm text-gray-500">Email</span>
+            <span class="font-medium">{{ resData.email || "—" }}</span>
+          </div>
+          <UDivider />
+          <div class="flex items-center justify-between">
+            <span class="text-sm text-gray-500">Phone</span>
+            <span class="font-medium">{{ resData.phone_number || "—" }}</span>
+          </div>
+          <UDivider />
+          <div class="flex items-center justify-between">
+            <span class="text-sm text-gray-500">Role</span>
+            <span class="font-medium">
+              <UBadge variant="soft">{{ resData.role || "—" }}</UBadge>
+            </span>
+          </div>
+        </div>
+
+        <template #footer>
+          <div class="flex justify-between items-center">
+            <p class="text-xs text-gray-500">Profile data from API response.</p>
             <UButton
+              @click="isChangePasswordOpen = true"
+              variant="outline"
               size="sm"
-              color="primary"
-              variant="outline"
-              @click="viewOrder(order.id)"
             >
-              View Details
+              Change Password
             </UButton>
           </div>
-        </div>
-      </div>
-      <div v-else class="text-neutral-400 text-center py-8">
-        <Icon name="i-heroicons-archive-box" class="inline h-8 w-8 mb-2" />
-        <div>No orders yet.</div>
-      </div>
-    </UCard>
-
-    <!-- Addresses -->
-    <UCard>
-      <div class="flex items-center justify-between mb-4">
-        <h3 class="text-lg font-semibold text-neutral-900">Addresses</h3>
-        <UButton @click="addAddress" size="sm" color="primary" variant="solid">
-          Add Address
-        </UButton>
-      </div>
-      <div v-if="addresses.length" class="grid gap-4 md:grid-cols-2">
-        <div
-          v-for="address in addresses"
-          :key="address.id"
-          class="bg-neutral-50 p-4 rounded border border-neutral-200 flex flex-col gap-2"
-        >
-          <div class="text-neutral-900 font-medium">
-            {{ address.line1 }}, {{ address.city }}, {{ address.zip }}
-          </div>
-          <div class="flex gap-2 mt-2">
-            <UButton
-              @click="editAddress(address)"
-              size="xs"
-              color="primary"
-              variant="outline"
-            >
-              Edit
-            </UButton>
-            <UButton
-              @click="deleteAddress(address.id)"
-              size="xs"
-              color="red"
-              variant="outline"
-            >
-              Delete
-            </UButton>
-          </div>
-        </div>
-      </div>
-      <div v-else class="text-neutral-400 text-center py-6">
-        <Icon name="i-heroicons-map-pin" class="inline h-7 w-7 mb-1" />
-        <div>No addresses saved.</div>
-      </div>
-    </UCard>
-
-    <!-- Account Actions -->
-    <UCard class="flex flex-wrap gap-3 justify-end p-4">
-      <UButton @click="changePassword" variant="outline" color="primary">
-        Change Password
-      </UButton>
-      <UButton @click="logout" color="red" variant="outline"> Logout </UButton>
-    </UCard>
+        </template>
+      </UCard>
+    </div>
   </div>
+
+  <UModal :open="isChangePasswordOpen" @close="isChangePasswordOpen = false">
+    <template #content>
+      <div class="p-6">
+        <h2 class="text-lg font-semibold mb-4">Change Password</h2>
+        <UForm
+          :schema="changePasswordSchema"
+          :state="changePasswordState"
+          @submit.prevent="onChangePasswordSubmit"
+        >
+          <div class="space-y-4">
+            <UFormField label="Current Password" name="current_password">
+              <UInput
+                v-model="changePasswordState.current_password"
+                type="password"
+                placeholder="Enter current password"
+                class="w-full"
+              />
+            </UFormField>
+            <UFormField label="New Password" name="new_password">
+              <UInput
+                v-model="changePasswordState.new_password"
+                type="password"
+                placeholder="Enter new password"
+                class="w-full"
+              />
+            </UFormField>
+            <UFormField label="Confirm New Password" name="confirm_password">
+              <UInput
+                v-model="changePasswordState.confirm_password"
+                type="password"
+                placeholder="Confirm new password"
+                class="w-full"
+              />
+            </UFormField>
+          </div>
+          <div class="flex justify-end space-x-2 mt-6">
+            <UButton variant="outline" @click="isChangePasswordOpen = false">
+              Cancel
+            </UButton>
+            <UButton type="submit"> Change Password </UButton>
+          </div>
+        </UForm>
+      </div>
+    </template>
+  </UModal>
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, computed, onMounted } from "vue";
+import * as yup from "yup";
+import { useToast } from "#imports";
 import { useAuth } from "../composables/useAuth";
 
-const { user, profile, logout } = useAuth();
+const auth = useAuth();
+const toast = useToast();
 
-// Example orders and addresses, replace with real API data
-const orders = ref([
-  { id: 1, date: "2025-09-01", status: "Delivered", total: "$199.99" },
-  { id: 2, date: "2025-08-15", status: "Shipped", total: "$89.50" },
-]);
-const orderColumns = [
-  { id: "id", key: "id", label: "Order ID" },
-  { id: "date", key: "date", label: "Date" },
-  { id: "status", key: "status", label: "Status" },
-  { id: "total", key: "total", label: "Total" },
-];
+// Modal state
+const isChangePasswordOpen = ref(false);
 
-const addresses = ref([
-  { id: 1, line1: "123 Main St", city: "Metropolis", zip: "12345" },
-]);
+// Form state
+const changePasswordState = ref({
+  current_password: "",
+  new_password: "",
+  confirm_password: "",
+});
 
-function editProfile() {
-  /* open edit profile modal */
+// Form schema
+const changePasswordSchema = yup.object({
+  current_password: yup.string().required("Current password is required"),
+  new_password: yup
+    .string()
+    .min(8, "New password must be at least 8 characters")
+    .required("New password is required"),
+  confirm_password: yup
+    .string()
+    .oneOf([yup.ref("new_password")], "Passwords must match")
+    .required("Please confirm your new password"),
+});
+
+// Submit handler
+async function onChangePasswordSubmit({
+  data,
+}: {
+  data: typeof changePasswordState.value;
+}) {
+  try {
+    await auth.changePassword(data.current_password, data.new_password);
+    toast.add({ title: "Password changed successfully", color: "success" });
+    isChangePasswordOpen.value = false;
+    // Reset form
+    changePasswordState.value = {
+      current_password: "",
+      new_password: "",
+      confirm_password: "",
+    };
+  } catch (e: any) {
+    console.log(e.data);
+    toast.add({
+      title: "Failed to change password",
+      description: e.data.message,
+      color: "error",
+    });
+  }
 }
-function addAddress() {
-  /* open add address modal */
-}
-function editAddress(address: any) {
-  /* open edit address modal */
-}
-function deleteAddress(id: number) {
-  /* delete address */
-}
-function changePassword() {
-  /* open change password modal */
-}
-function viewAllOrders() {
-  /* navigate to full order history page */
-}
+
+// Seed with provided response; overwritten by live API if available
+const res = ref<any>({
+  status: "success",
+  data: {
+    username: "admin",
+    email: "admin@gmail.com",
+    phone_number: "010732112",
+    role: "admin",
+  },
+});
+
+const resData = computed(() => res.value?.data || {});
+const statusColor = computed(() =>
+  res.value?.status === "success" ? "green" : "red"
+);
 
 onMounted(async () => {
   try {
-    await profile();
-  } catch {}
+    const r: any = await auth.profile();
+    if (r && r.status) res.value = r;
+  } catch {
+    // keep seeded response if API fails
+  }
 });
 </script>

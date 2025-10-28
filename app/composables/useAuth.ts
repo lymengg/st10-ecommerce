@@ -53,14 +53,17 @@ export function useAuth() {
   const { request } = useApi();
 
   async function apiLogin(username: string, password: string) {
-    // login expects x-www-form-urlencoded
+    // login uses FormData (multipart/form-data)
+    const formData = new FormData();
+    formData.append("username", username);
+    formData.append("password", password);
+
     const res: any = await request("/api/auth/login", {
       method: "POST",
-      body: new URLSearchParams({ username, password }) as any,
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: formData,
     });
 
-    if (res.status === "success") {
+    if (res.code === 200) {
       await login(res.data.access_token, res.data.refresh_token, {
         username: res.data.username,
         role: res.data.role,
@@ -83,13 +86,8 @@ export function useAuth() {
       body: payload,
       headers: { "Content-Type": "application/json" },
     });
-    if (res.status === "success") {
-      await login(res.data.access_token, res.data.refresh_token, {
-        username: res.data.username,
-        role: res.data.role,
-        email: res.data.email,
-        phone_number: res.data.phone_number,
-      });
+    console.log(res);
+    if (res.code === 201) {
       return res;
     }
     throw res;
@@ -104,7 +102,7 @@ export function useAuth() {
       body: { refresh_token: refreshToken },
       headers: { "Content-Type": "application/json" },
     });
-    if (res.status === "success") {
+    if (res.code === 200) {
       if (typeof window !== "undefined") {
         localStorage.setItem(ACCESS_KEY, res.data.access_token);
         if (res.data.refresh_token)
@@ -116,12 +114,30 @@ export function useAuth() {
   }
 
   async function profile() {
-    const res: any = await request("/api/auth/profile", { method: "GET" });
-    if (res.status === "success") {
+    const res: any = await request("/api/users/me", { method: "GET" });
+    if (res.code === 200) {
       if (typeof window !== "undefined")
         localStorage.setItem("user", JSON.stringify(res.data));
       user.value = res.data;
       isAuthenticated.value = true;
+    }
+    return res;
+  }
+
+  async function updateProfile(payload: {
+    username?: string;
+    email?: string;
+    phone_number?: string;
+  }) {
+    const res: any = await request("/api/users/me", {
+      method: "PUT",
+      body: payload,
+      headers: { "Content-Type": "application/json" },
+    });
+    if (res.code === 200) {
+      if (typeof window !== "undefined")
+        localStorage.setItem("user", JSON.stringify(res.data));
+      user.value = res.data;
     }
     return res;
   }
@@ -151,6 +167,7 @@ export function useAuth() {
     register,
     refresh,
     profile,
+    updateProfile,
     changePassword,
     logout,
   };

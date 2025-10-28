@@ -5,14 +5,6 @@
       <p class="text-gray-700 text-lg">
         Discover our premium collection of luxury timepieces
       </p>
-      <div v-if="isAuthenticated && user?.role === 'admin'" class="mt-4">
-        <UButton to="/admin/products" color="primary" variant="solid">
-          <template #leading>
-            <Icon name="i-heroicons-cog-6-tooth" />
-          </template>
-          Manage Products
-        </UButton>
-      </div>
     </div>
 
     <!-- Simple Filter Bar -->
@@ -350,13 +342,15 @@ const { request } = useApi();
 
 // Basic image helpers to avoid broken src when backend sends raw base64 or empty values
 // Use a data URI placeholder to avoid 404 loops
-const placeholderImg = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw=="; // 1x1 transparent gif
+const placeholderImg =
+  "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw=="; // 1x1 transparent gif
 function normalizeImage(img?: string | null) {
   if (!img) return placeholderImg;
   const s = String(img).trim();
   if (s.startsWith("data:image/")) return s; // already a data URL
   // If it looks like raw base64, wrap into a data URL (assume jpeg)
-  if (/^[A-Za-z0-9+/=]+$/.test(s) && s.length > 100) return `data:image/jpeg;base64,${s}`;
+  if (/^[A-Za-z0-9+/=]+$/.test(s) && s.length > 100)
+    return `data:image/jpeg;base64,${s}`;
   // Otherwise return as-is (supports absolute http(s) URLs and app-relative /imgs/...)
   return s;
 }
@@ -383,7 +377,6 @@ onMounted(async () => {
     // console.warn('Failed to load products from API, using local fallback', e);
   }
 });
-
 </script>
 
 <style scoped>

@@ -11,107 +11,165 @@
     </div>
 
     <UCard>
-      <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-neutral-200">
-          <thead class="bg-neutral-50">
-            <tr>
-              <th class="px-4 py-3 text-left text-xs font-semibold text-neutral-600 uppercase tracking-wider">Image</th>
-              <th class="px-4 py-3 text-left text-xs font-semibold text-neutral-600 uppercase tracking-wider">Name</th>
-              <th class="px-4 py-3 text-left text-xs font-semibold text-neutral-600 uppercase tracking-wider">Brand</th>
-              <th class="px-4 py-3 text-left text-xs font-semibold text-neutral-600 uppercase tracking-wider">Price</th>
-              <th class="px-4 py-3 text-left text-xs font-semibold text-neutral-600 uppercase tracking-wider">Stock</th>
-              <th class="px-4 py-3 text-right text-xs font-semibold text-neutral-600 uppercase tracking-wider">Actions</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-neutral-200 bg-white">
-            <tr v-for="p in products" :key="p.id">
-              <td class="px-4 py-3">
-                <img :src="p.image" :alt="p.name" class="h-12 w-12 object-cover rounded" />
-              </td>
-              <td class="px-4 py-3 font-medium text-neutral-900">{{ p.name }}</td>
-              <td class="px-4 py-3 text-neutral-700">{{ p.brand }}</td>
-              <td class="px-4 py-3 text-neutral-900 font-semibold">${{ p.price }}</td>
-              <td class="px-4 py-3 text-neutral-700">{{ p.stock ?? '-' }}</td>
-              <td class="px-4 py-3">
-                <div class="flex gap-2 justify-end">
-                  <UButton size="xs" variant="soft" color="neutral" :to="`/admin/products/${p.id}/edit`">
-                    <template #leading>
-                      <Icon name="i-heroicons-pencil-square" />
-                    </template>
-                    Edit
-                  </UButton>
-                  <UButton size="xs" color="red" variant="soft" :loading="deletingId === p.id" @click="confirmDelete(p)">
-                    <template #leading>
-                      <Icon name="i-heroicons-trash" />
-                    </template>
-                    Delete
-                  </UButton>
-                </div>
-              </td>
-            </tr>
-            <tr v-if="!loading && products.length === 0">
-              <td colspan="6" class="px-4 py-10 text-center text-neutral-600">
-                No products found.
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <div v-if="loading" class="py-10 text-center text-neutral-600">Loading...</div>
+      <UTable
+        :data="products"
+        :columns="columns"
+        :loading="loading"
+        empty="No products found."
+      >
+        <template #image-cell="{ row }">
+          <img
+            :src="row.original.image"
+            :alt="row.original.name"
+            class="h-12 w-12 object-cover rounded"
+          />
+        </template>
+        <template #name-cell="{ row }">
+          <span class="font-medium text-neutral-900">{{
+            row.original.name
+          }}</span>
+        </template>
+        <template #brand-cell="{ row }">
+          <span class="text-neutral-700">{{ row.original.brand }}</span>
+        </template>
+        <template #price-cell="{ row }">
+          <span class="text-neutral-900 font-semibold"
+            >${{ row.original.price }}</span
+          >
+        </template>
+        <template #stock-cell="{ row }">
+          <span class="text-neutral-700">{{ row.original.stock ?? "-" }}</span>
+        </template>
+        <template #actions-cell="{ row }">
+          <div class="flex gap-2 justify-end">
+            <UButton
+              size="xs"
+              variant="soft"
+              color="neutral"
+              :to="`/admin/products/${row.original.id}/edit`"
+            >
+              <template #leading>
+                <Icon name="i-heroicons-pencil-square" />
+              </template>
+              Edit
+            </UButton>
+            <UButton
+              size="xs"
+              color="error"
+              variant="soft"
+              :loading="deletingId === row.original.id"
+              @click="confirmDelete(row.original)"
+            >
+              <template #leading>
+                <Icon name="i-heroicons-trash" />
+              </template>
+              Delete
+            </UButton>
+          </div>
+        </template>
+      </UTable>
     </UCard>
+
+    <div class="mt-6 flex justify-center">
+      <UPagination
+        v-model:page="page"
+        :items-per-page="limit"
+        :total="total"
+        @update:page="fetchProducts"
+      />
+    </div>
   </UContainer>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { useToast } from '#imports'
-import { useApi } from '../../../composables/useApi'
+import { ref, onMounted } from "vue";
+import { useToast } from "#imports";
+import { useApi } from "../../../composables/useApi";
 
-definePageMeta({ middleware: 'admin' })
+definePageMeta({ layout: "admin", middleware: "admin" });
 
-const products = ref<any[]>([])
-const loading = ref(false)
-const deletingId = ref<number | null>(null)
-const toast = useToast()
-const { request } = useApi()
+const products = ref<any[]>([]);
+const loading = ref(false);
+const deletingId = ref<number | null>(null);
+const toast = useToast();
+const { request } = useApi();
+
+// Server-side pagination
+const page = ref(1);
+const limit = ref(10);
+const total = ref(0);
+
+const columns = [
+  { accessorKey: "image", header: "Image" },
+  { accessorKey: "name", header: "Name" },
+  { accessorKey: "brand", header: "Brand" },
+  { accessorKey: "price", header: "Price" },
+  { accessorKey: "stock", header: "Stock" },
+  {
+    id: "actions",
+    header: "Actions",
+    meta: { class: { th: "text-right", td: "text-right" } },
+  },
+];
 
 async function fetchProducts() {
-  loading.value = true
+  loading.value = true;
   try {
-    const res: any = await request('/api/products/', { method: 'GET' })
-    if (res?.status === 'success' && Array.isArray(res.data)) {
-      products.value = res.data
+    const skip = (page.value - 1) * limit.value;
+    const url = `/api/products/?skip=${skip}&limit=${limit.value}`;
+    const res: any = await request(url, { method: "GET" });
+
+    // Handle PaginatedProducts response structure
+    if (res?.items && Array.isArray(res.items)) {
+      products.value = res.items;
+      total.value = res.total || 0;
+    } else if (
+      res?.status === "success" &&
+      res.data?.items &&
+      Array.isArray(res.data.items)
+    ) {
+      products.value = res.data.items;
+      total.value = res.data.total || 0;
     } else if (Array.isArray(res)) {
-      products.value = res as any
-    } else if (Array.isArray((res as any)?.results)) {
-      products.value = (res as any).results
+      products.value = res;
+      total.value = res.length;
+    } else {
+      products.value = [];
+      total.value = 0;
     }
   } catch (e: any) {
-    toast.add({ title: 'Failed to load products', description: e?.data || e?.message || 'Error', color: 'error' })
+    toast.add({
+      title: "Failed to load products",
+      description: e?.data || e?.message || "Error",
+      color: "error",
+    });
   } finally {
-    loading.value = false
+    loading.value = false;
   }
 }
 
 function confirmDelete(p: any) {
   if (confirm(`Delete ${p.name}? This cannot be undone.`)) {
-    deleteProduct(p.id)
+    deleteProduct(p.id);
   }
 }
 
 async function deleteProduct(id: number) {
   try {
-    deletingId.value = id
-    await request(`/api/products/${id}`, { method: 'DELETE' })
-    products.value = products.value.filter((x) => x.id !== id)
-    toast.add({ title: 'Product deleted', color: 'success' })
+    deletingId.value = id;
+    await request(`/api/products/${id}`, { method: "DELETE" });
+    products.value = products.value.filter((x) => x.id !== id);
+    toast.add({ title: "Product deleted", color: "success" });
   } catch (e: any) {
-    toast.add({ title: 'Failed to delete', description: e?.data || e?.message || 'Error', color: 'error' })
+    toast.add({
+      title: "Failed to delete",
+      description: e?.data || e?.message || "Error",
+      color: "error",
+    });
   } finally {
-    deletingId.value = null
+    deletingId.value = null;
   }
 }
 
-onMounted(fetchProducts)
+onMounted(fetchProducts);
 </script>

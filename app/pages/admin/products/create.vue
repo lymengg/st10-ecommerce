@@ -2,38 +2,46 @@
   <div class="flex flex-col items-center justify-center min-h-screen py-10">
     <UCard class="w-full max-w-lg">
       <h2 class="text-xl font-bold mb-6 text-neutral-900">Create Product</h2>
-      <UForm :state="state" @submit.prevent="onSubmit">
+      <UForm :state="state" :schema="schema" @submit="onSubmit">
         <UFormField label="Name" name="name">
           <UInput
             v-model="state.name"
             placeholder="Product name"
             class="w-full"
+            required
           />
         </UFormField>
         <UFormField label="Brand" name="brand" class="mt-4">
-          <UInput v-model="state.brand" placeholder="Brand" class="w-full" />
+          <UInput v-model="state.brand" placeholder="Brand" class="w-full" required />
         </UFormField>
         <UFormField label="Description" name="description" class="mt-4">
           <UTextarea
             v-model="state.description"
-            placeholder="Description"
+            placeholder="Description (min 10 characters)"
             class="w-full"
+            required
           />
         </UFormField>
         <UFormField label="Price" name="price" class="mt-4">
           <UInput
             v-model="state.price"
             type="number"
+            min="0.01"
+            step="0.01"
             placeholder="Price"
             class="w-full"
+            required
           />
         </UFormField>
         <UFormField label="Stock" name="stock" class="mt-4">
           <UInput
             v-model="state.stock"
             type="number"
+            min="0"
+            step="1"
             placeholder="Stock"
             class="w-full"
+            required
           />
         </UFormField>
         <UFormField label="Image" name="image" class="mt-4">
@@ -54,11 +62,6 @@
         <div class="mt-6 flex justify-end">
           <UButton type="submit" color="primary">Create Product</UButton>
         </div>
-        <div v-if="created" class="mt-4 flex justify-end">
-          <UButton to="/admin/products" variant="soft" color="neutral">
-            Go to Product List
-          </UButton>
-        </div>
       </UForm>
     </UCard>
   </div>
@@ -68,8 +71,11 @@
 import { ref } from "vue";
 import { useToast } from "#imports";
 import { useApi } from "../../../composables/useApi";
+import { object, string, number } from "yup";
+import type { InferType } from "yup";
+import type { FormSubmitEvent } from "#ui/types";
 
-definePageMeta({ middleware: "admin" });
+definePageMeta({ layout: "admin", middleware: "admin" });
 
 const state = ref({
   name: "",
@@ -79,7 +85,29 @@ const state = ref({
   stock: 0,
   image: "",
 });
-const created = ref(false);
+
+const schema = object({
+  name: string().trim().required("Name is required"),
+  brand: string().trim().required("Brand is required"),
+  description: string()
+    .trim()
+    .min(10, "Description must be at least 10 characters")
+    .required("Description is required"),
+  price: number()
+    .transform((val, orig) => (typeof orig === "string" ? Number(orig) : val))
+    .typeError("Price must be a number")
+    .moreThan(0, "Price must be greater than 0")
+    .required("Price is required"),
+  stock: number()
+    .transform((val, orig) => (typeof orig === "string" ? Number(orig) : val))
+    .typeError("Stock must be a number")
+    .integer("Stock must be an integer")
+    .min(0, "Stock cannot be negative")
+    .required("Stock is required"),
+  image: string().nullable().notRequired(),
+});
+
+type Schema = InferType<typeof schema>;
 
 const { request } = useApi();
 const toast = useToast();
@@ -94,17 +122,17 @@ function onFileChange(event: Event) {
   reader.readAsDataURL(file);
 }
 
-async function onSubmit() {
+async function onSubmit(event: FormSubmitEvent<Schema>) {
   try {
     await request("/api/products/", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: {
-        ...state.value,
+        ...event.data,
       },
     });
     toast.add({ title: "Product created successfully", color: "success" });
-    created.value = true;
+    navigateTo("/admin/products");
   } catch (e: any) {
     toast.add({
       title: "Failed to create product",

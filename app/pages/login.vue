@@ -81,18 +81,9 @@ const { login: apiLogin } = useAuth();
 
 async function onSubmit({ data }: { data: typeof state.value }) {
   try {
-    const res: any = await apiLogin(data.username, data.password);
-
-    if (res.status === "success") {
-      toast.add({ title: "Login successful", color: "success" });
-      router.push("/");
-    } else {
-      toast.add({
-        title: "Login failed",
-        description: res.data || (res as any)?.detail || "Login failed",
-        color: "error",
-      });
-    }
+    await apiLogin(data.username, data.password);
+    toast.add({ title: "Login successful", color: "success" });
+    router.push("/");
   } catch (e: any) {
     const errorMsg = e?.data?.data || e?.data?.detail || e?.message || "Login failed";
     toast.add({

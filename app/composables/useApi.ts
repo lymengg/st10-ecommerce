@@ -40,7 +40,7 @@ export function useApi() {
           headers: { "Content-Type": "application/json" },
         });
 
-        if (res?.status === "success") {
+        if (res?.code === 200) {
           // Persist new tokens
           if (typeof window !== "undefined") {
             localStorage.setItem(ACCESS_KEY, res.data.access_token);
@@ -81,6 +81,7 @@ export function useApi() {
 
     try {
       const res = await $fetch<T>(baseURL + endpoint, opts);
+      console.log(res);
       return res;
     } catch (e: any) {
       const { status, data } = parseError(e);

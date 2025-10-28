@@ -130,25 +130,21 @@ function onSubmit({ data }: { data: typeof state.value }) {
 
 async function handleRegister(data: typeof state.value) {
   try {
-    const res: any = await register({
+    await register({
       username: data.username,
       password: data.password,
       email: data.email,
       phone_number: data.phone_number,
     });
 
-    if (res.status === "success") {
-      toast.add({ title: "Registration successful", color: "success" });
-      router.push("/");
-    } else {
-      toast.add({
-        title: "Registration failed",
-        description: res.data || (res as any)?.detail || "Registration failed",
-        color: "error",
-      });
-    }
+    toast.add({
+      title: "Registration successful! Please login to continue.",
+      color: "success",
+    });
+    router.push("/login");
   } catch (e: any) {
-    const errorMsg = e?.data?.data || e?.data?.detail || e?.message || "Registration failed";
+    const errorMsg =
+      e?.data?.data || e?.data?.detail || e?.message || "Registration failed";
     toast.add({
       title: "Registration failed",
       description: errorMsg,
