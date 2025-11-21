@@ -1,5 +1,6 @@
 import { ref, computed } from "vue";
-import { useApi } from "./useApi";
+import type { ApiResponse } from "~/types/api";
+import type { TokenResponse } from "~/types/auth";
 
 const ACCESS_KEY = "access_token";
 const REFRESH_KEY = "refresh_token";
@@ -48,31 +49,31 @@ function logout() {
   user.value = null;
 }
 
-// API-backed actions
 export function useAuth() {
-  const { request } = useApi();
+  const api = useNuxtApp().$api as typeof $fetch;
 
-  async function apiLogin(username: string, password: string) {
-    // login uses FormData (multipart/form-data)
+  const isAuthenticated = ref(false);
+
+  async function login(
+    username: string,
+    password: string
+  ): Promise<ApiResponse<TokenResponse>> {
     const formData = new FormData();
     formData.append("username", username);
     formData.append("password", password);
 
-    const res: any = await request("/api/auth/login", {
+    const response = await api<ApiResponse<TokenResponse>>("/api/auth/login", {
       method: "POST",
       body: formData,
     });
 
-    if (res.code === 200) {
-      await login(res.data.access_token, res.data.refresh_token, {
-        username: res.data.username,
-        role: res.data.role,
-        email: res.data.email,
-        phone_number: res.data.phone_number,
-      });
-      return res;
+    if (response.code === 200) {
+      isAuthenticated.value = true;
+      localStorage.setItem(ACCESS_KEY, response.data!.access_token);
+      localStorage.setItem(REFRESH_KEY, response.data!.refresh_token);
     }
-    throw res;
+
+    return response;
   }
 
   async function register(payload: {
@@ -163,7 +164,7 @@ export function useAuth() {
   return {
     isAuthenticated: computed(() => isAuthenticated.value),
     user: computed(() => user.value),
-    login: apiLogin,
+    login,
     register,
     refresh,
     profile,

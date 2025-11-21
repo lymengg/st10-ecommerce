@@ -14,9 +14,9 @@
         <div class="flex items-center gap-2">
           <Icon name="i-heroicons-funnel" class="w-5 h-5 text-primary" />
           <h2 class="text-lg font-semibold text-neutral-900">Filters</h2>
-          <span class="text-sm text-neutral-500"
-            >({{ filteredProducts.length }} results)</span
-          >
+          <span class="text-sm text-neutral-500">
+            ({{ filteredProducts.length }} results)
+          </span>
         </div>
         <button
           v-if="hasActiveFilters"
