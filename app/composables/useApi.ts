@@ -40,7 +40,7 @@ export function useApi() {
           headers: { "Content-Type": "application/json" },
         });
 
-        if (res?.code === 200) {
+        if (res?.status === "success") {
           // Persist new tokens
           if (typeof window !== "undefined") {
             localStorage.setItem(ACCESS_KEY, res.data.access_token);
@@ -109,7 +109,29 @@ export function useApi() {
 
       // Normalize error envelope expected by frontend
       if (data && data.status === "error") {
-        throw { status: status || 400, data: data.data || data };
+        // Backend should handle all errors properly and return clean messages
+        const errorMsg = data.data || data;
+        throw { status: status || 400, data: errorMsg };
+      }
+
+      // Handle different status codes with appropriate messages
+      if (status >= 500) {
+        throw {
+          status: status || 500,
+          data: "Internal server error. Please try again later.",
+        };
+      }
+
+      if (status === 422) {
+        // Validation errors - extract field details if available
+        const validationDetails = data?.detail;
+        if (Array.isArray(validationDetails)) {
+          const fieldErrors = validationDetails.map((err: any) =>
+            err?.msg || `${err?.loc?.join('.')} error`
+          ).join(', ');
+          throw { status: 422, data: fieldErrors || "Validation failed" };
+        }
+        throw { status: 422, data: validationDetails || "Validation failed" };
       }
 
       throw {

@@ -9,7 +9,7 @@ export default defineNuxtConfig({
   runtimeConfig: {
     public: {
       // Configure your backend base URL at build/runtime via env var
-      apiBase: process.env.NUXT_PUBLIC_API_BASE || "https://api.example.com",
+      apiBase: process.env.NUXT_PUBLIC_API_BASE || "http://localhost:8000",
     },
   },
   nitro: {

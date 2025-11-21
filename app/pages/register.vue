@@ -143,8 +143,9 @@ async function handleRegister(data: typeof state.value) {
     });
     router.push("/login");
   } catch (e: any) {
-    const errorMsg =
-      e?.data?.data || e?.data?.detail || e?.message || "Registration failed";
+    // Extract the error message from the normalized error structure
+    const errorMsg = e?.data || e?.message || "Registration failed";
+
     toast.add({
       title: "Registration failed",
       description: errorMsg,

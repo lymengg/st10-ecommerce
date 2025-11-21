@@ -63,7 +63,7 @@ export function useAuth() {
       body: formData,
     });
 
-    if (res.code === 200) {
+    if (res.status === "success") {
       await login(res.data.access_token, res.data.refresh_token, {
         username: res.data.username,
         role: res.data.role,
@@ -86,8 +86,8 @@ export function useAuth() {
       body: payload,
       headers: { "Content-Type": "application/json" },
     });
-    console.log(res);
-    if (res.code === 201) {
+
+    if (res.status === "success") {
       return res;
     }
     throw res;
@@ -102,7 +102,7 @@ export function useAuth() {
       body: { refresh_token: refreshToken },
       headers: { "Content-Type": "application/json" },
     });
-    if (res.code === 200) {
+    if (res.status === "success") {
       if (typeof window !== "undefined") {
         localStorage.setItem(ACCESS_KEY, res.data.access_token);
         if (res.data.refresh_token)
@@ -115,7 +115,7 @@ export function useAuth() {
 
   async function profile() {
     const res: any = await request("/api/users/me", { method: "GET" });
-    if (res.code === 200) {
+    if (res.status === "success") {
       if (typeof window !== "undefined")
         localStorage.setItem("user", JSON.stringify(res.data));
       user.value = res.data;
@@ -134,7 +134,7 @@ export function useAuth() {
       body: payload,
       headers: { "Content-Type": "application/json" },
     });
-    if (res.code === 200) {
+    if (res.status === "success") {
       if (typeof window !== "undefined")
         localStorage.setItem("user", JSON.stringify(res.data));
       user.value = res.data;
