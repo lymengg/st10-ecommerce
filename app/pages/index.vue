@@ -7,25 +7,52 @@
       </p>
     </div>
 
-    <!-- Simple Filter Bar -->
-    <div class="bg-white rounded-lg border border-neutral-200 p-6 mb-8">
-      <!-- Header -->
-      <div class="flex items-center justify-between mb-6">
-        <div class="flex items-center gap-2">
-          <Icon name="i-heroicons-funnel" class="w-5 h-5 text-primary" />
-          <h2 class="text-lg font-semibold text-neutral-900">Filters</h2>
-          <span class="text-sm text-neutral-500"
-            >({{ filteredProducts.length }} results)</span
+    <!-- Error State -->
+    <div v-if="error" class="bg-red-50 border border-red-200 rounded-lg p-6 mb-8">
+      <div class="flex items-center gap-3">
+        <Icon name="i-heroicons-exclamation-triangle" class="w-6 h-6 text-red-600" />
+        <div>
+          <h3 class="text-red-900 font-semibold">Failed to load products</h3>
+          <p class="text-red-700">{{ error }}</p>
+          <button
+            @click="fetchProducts"
+            class="mt-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
           >
+            Try Again
+          </button>
         </div>
-        <button
-          v-if="hasActiveFilters"
-          @click="clearAllFilters"
-          class="text-sm text-primary hover:text-primary/80 font-medium"
-        >
-          Clear all
-        </button>
       </div>
+    </div>
+
+    <!-- Loading State -->
+    <div v-else-if="loading" class="bg-white rounded-lg border border-neutral-200 p-12 mb-8">
+      <div class="flex flex-col items-center justify-center">
+        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
+        <p class="text-neutral-600">Loading products...</p>
+      </div>
+    </div>
+
+    <!-- Products loaded - Show filters -->
+    <div v-else>
+      <!-- Simple Filter Bar -->
+      <div class="bg-white rounded-lg border border-neutral-200 p-6 mb-8">
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-6">
+          <div class="flex items-center gap-2">
+            <Icon name="i-heroicons-funnel" class="w-5 h-5 text-primary" />
+            <h2 class="text-lg font-semibold text-neutral-900">Filters</h2>
+            <span class="text-sm text-neutral-500">
+              ({{ filteredProducts.length }} of {{ totalProducts }} products)
+            </span>
+          </div>
+          <button
+            v-if="hasActiveFilters"
+            @click="clearAllFilters"
+            class="text-sm text-primary hover:text-primary/80 font-medium"
+          >
+            Clear all
+          </button>
+        </div>
 
       <!-- Filter Controls -->
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -154,9 +181,26 @@
           </span>
         </div>
       </div>
+
+      <!-- No Products State -->
+      <div v-if="!loading && !error && filteredProducts.length === 0" class="bg-white rounded-lg border border-neutral-200 p-12">
+        <div class="flex flex-col items-center justify-center">
+          <Icon name="i-heroicons-inbox" class="w-16 h-16 text-neutral-400 mb-4" />
+          <h3 class="text-xl font-semibold text-neutral-900 mb-2">No products found</h3>
+          <p class="text-neutral-600 mb-4">Try adjusting your filters or search terms</p>
+          <button
+            v-if="hasActiveFilters"
+            @click="clearAllFilters"
+            class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/80 transition-colors"
+          >
+            Clear Filters
+          </button>
+        </div>
+      </div>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+    <!-- Products Grid -->
+    <div v-if="!loading && !error && filteredProducts.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
       <div
         v-for="product in filteredProducts"
         :key="product.id"
@@ -230,13 +274,16 @@
 </template>
 
 <script setup lang="ts">
-import fallbackProducts from "@/data/products";
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, watch } from "vue";
 import { useApi } from "../composables/useApi";
 import { useAuth } from "../composables/useAuth";
-import { useRouter } from "vue-router";
 
 const { user, isAuthenticated } = useAuth();
+const { request } = useApi();
+
+// Loading and error states
+const loading = ref(true);
+const error = ref<string | null>(null);
 
 // Filter state
 const selectedBrand = ref("");
@@ -245,7 +292,11 @@ const maxPrice = ref<number | null>(null);
 const sortBy = ref("");
 const searchQuery = ref("");
 
-const products = ref<any[]>(fallbackProducts.slice());
+// Products state - initialize as empty array
+const products = ref<any[]>([]);
+const totalProducts = ref(0);
+const currentPage = ref(1);
+const totalPages = ref(0);
 
 // Brand options
 const brands = computed(() =>
@@ -289,10 +340,7 @@ const clearAllFilters = () => {
 // Filtered and sorted products
 const filteredProducts = computed(() => {
   let filtered = products.value.filter((p) => {
-    // Brand filter
-    const brandMatch = !selectedBrand.value || p.brand === selectedBrand.value;
-
-    // Price range filter (treat only valid numbers as filter)
+    // Price range filter (client-side filtering since API doesn't support price range yet)
     const minVal =
       typeof minPrice.value === "number" && !isNaN(minPrice.value)
         ? minPrice.value
@@ -304,17 +352,11 @@ const filteredProducts = computed(() => {
     const minPriceMatch = minVal === null || p.price >= minVal;
     const maxPriceMatch = maxVal === null || p.price <= maxVal;
 
-    // Search filter
-    const searchMatch =
-      !searchQuery.value ||
-      p.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      p.brand.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      p.description.toLowerCase().includes(searchQuery.value.toLowerCase());
-
-    return brandMatch && minPriceMatch && maxPriceMatch && searchMatch;
+    // Note: search and brand filtering is now handled server-side
+    return minPriceMatch && maxPriceMatch;
   });
 
-  // Apply sorting
+  // Apply sorting (client-side sorting)
   if (sortBy.value) {
     filtered = [...filtered].sort((a, b) => {
       switch (sortBy.value) {
@@ -337,13 +379,11 @@ const filteredProducts = computed(() => {
   return filtered;
 });
 
-// Load products from API on mount
-const { request } = useApi();
-
 // Basic image helpers to avoid broken src when backend sends raw base64 or empty values
 // Use a data URI placeholder to avoid 404 loops
 const placeholderImg =
   "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw=="; // 1x1 transparent gif
+
 function normalizeImage(img?: string | null) {
   if (!img) return placeholderImg;
   const s = String(img).trim();
@@ -354,6 +394,7 @@ function normalizeImage(img?: string | null) {
   // Otherwise return as-is (supports absolute http(s) URLs and app-relative /imgs/...)
   return s;
 }
+
 function onImageError(e: Event) {
   const el = e.target as HTMLImageElement;
   if (!el) return;
@@ -362,20 +403,75 @@ function onImageError(e: Event) {
   el.src = placeholderImg;
 }
 
-onMounted(async () => {
+// Fetch products from API
+async function fetchProducts() {
+  loading.value = true;
+  error.value = null;
+
   try {
-    const res: any = await request("/api/products/", { method: "GET" });
-    // assume backend returns array or { status: 'success', data: [...] }
-    if (Array.isArray(res)) {
+    const params: any = {};
+
+    // Add search and brand filters (server-side filtering)
+    if (searchQuery.value) params.q = searchQuery.value;
+    if (selectedBrand.value) params.brand = selectedBrand.value;
+
+    // Add pagination params
+    params.skip = 0;
+    params.limit = 100; // Reasonable limit for initial load
+
+    const res: any = await request("/api/products/", {
+      method: "GET",
+      query: params
+    });
+
+    // Handle the paginated response format from our v1 API
+    if (res && res.items && Array.isArray(res.items)) {
+      products.value = res.items;
+      totalProducts.value = res.total || res.items.length;
+      currentPage.value = res.page || 1;
+      totalPages.value = res.pages || 1;
+    } else if (Array.isArray(res)) {
+      // Fallback for non-paginated response
       products.value = res;
-    } else if (res?.status === "success" && Array.isArray(res.data)) {
-      products.value = res.data;
+      totalProducts.value = res.length;
+      currentPage.value = 1;
+      totalPages.value = 1;
+    } else {
+      throw new Error("Invalid response format from API");
     }
-  } catch (e) {
-    // leave fallback products in place
-    // Optionally log to console for debugging
-    // console.warn('Failed to load products from API, using local fallback', e);
+  } catch (err: any) {
+    console.error("Failed to fetch products:", err);
+    error.value = err.data || err.message || "Failed to load products";
+    products.value = [];
+    totalProducts.value = 0;
+  } finally {
+    loading.value = false;
   }
+}
+
+// Initial load
+onMounted(() => {
+  fetchProducts();
+});
+
+// Debounce function to avoid excessive API calls
+function debounce<T extends (...args: any[]) => any>(
+  func: T,
+  wait: number
+): (...args: Parameters<T>) => void {
+  let timeout: NodeJS.Timeout;
+  return (...args: Parameters<T>) => {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => func(...args), wait);
+  };
+}
+
+// Debounced fetch function
+const debouncedFetch = debounce(fetchProducts, 500);
+
+// Watch for filter changes and refetch with debouncing
+watch([searchQuery, selectedBrand], () => {
+  debouncedFetch();
 });
 </script>
 
