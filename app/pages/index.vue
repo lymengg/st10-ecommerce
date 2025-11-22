@@ -8,9 +8,15 @@
     </div>
 
     <!-- Error State -->
-    <div v-if="error" class="bg-red-50 border border-red-200 rounded-lg p-6 mb-8">
+    <div
+      v-if="error"
+      class="bg-red-50 border border-red-200 rounded-lg p-6 mb-8"
+    >
       <div class="flex items-center gap-3">
-        <Icon name="i-heroicons-exclamation-triangle" class="w-6 h-6 text-red-600" />
+        <Icon
+          name="i-heroicons-exclamation-triangle"
+          class="w-6 h-6 text-red-600"
+        />
         <div>
           <h3 class="text-red-900 font-semibold">Failed to load products</h3>
           <p class="text-red-700">{{ error }}</p>
@@ -25,9 +31,14 @@
     </div>
 
     <!-- Loading State -->
-    <div v-else-if="loading" class="bg-white rounded-lg border border-neutral-200 p-12 mb-8">
+    <div
+      v-else-if="loading"
+      class="bg-white rounded-lg border border-neutral-200 p-12 mb-8"
+    >
       <div class="flex flex-col items-center justify-center">
-        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
+        <div
+          class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"
+        ></div>
         <p class="text-neutral-600">Loading products...</p>
       </div>
     </div>
@@ -54,218 +65,232 @@
           </button>
         </div>
 
-      <!-- Filter Controls -->
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <!-- Search -->
-        <div>
-          <label class="block text-sm font-medium text-neutral-700 mb-2"
-            >Search</label
-          >
-          <div class="relative">
-            <Icon
-              name="i-heroicons-magnifying-glass"
-              class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-primary/30"
-            />
+        <!-- Filter Controls -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <!-- Search -->
+          <div>
+            <label class="block text-sm font-medium text-neutral-700 mb-2"
+              >Search</label
+            >
+            <div class="relative">
+              <Icon
+                name="i-heroicons-magnifying-glass"
+                class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-primary/30"
+              />
+              <input
+                v-model="searchQuery"
+                type="text"
+                placeholder="Search watches..."
+                class="w-full pl-10 pr-4 py-2.5 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none bg-white text-neutral-900 placeholder-neutral-500"
+              />
+            </div>
+          </div>
+
+          <!-- Brand -->
+          <div>
+            <label class="block text-sm font-medium text-neutral-700 mb-2"
+              >Brand</label
+            >
+            <select
+              v-model="selectedBrand"
+              class="w-full px-3 py-2.5 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none bg-white text-neutral-900"
+            >
+              <option value="">All Brands</option>
+              <option v-for="brand in brands" :key="brand" :value="brand">
+                {{ brand }}
+              </option>
+            </select>
+          </div>
+
+          <!-- Price Range -->
+          <div>
+            <label class="block text-sm font-medium text-neutral-700 mb-2"
+              >Min Price</label
+            >
             <input
-              v-model="searchQuery"
-              type="text"
-              placeholder="Search watches..."
-              class="w-full pl-10 pr-4 py-2.5 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none bg-white text-neutral-900 placeholder-neutral-500"
+              v-model.number="minPrice"
+              type="number"
+              placeholder="$0"
+              min="0"
+              class="w-full px-3 py-2.5 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none bg-white text-neutral-900 placeholder-neutral-500 white-spin"
+            />
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-neutral-700 mb-2"
+              >Max Price</label
+            >
+            <input
+              v-model.number="maxPrice"
+              type="number"
+              placeholder="No limit"
+              :min="minPrice || 0"
+              class="w-full px-3 py-2.5 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none bg-white text-neutral-900 placeholder-neutral-500 white-spin"
             />
           </div>
         </div>
 
-        <!-- Brand -->
-        <div>
-          <label class="block text-sm font-medium text-neutral-700 mb-2"
-            >Brand</label
+        <!-- Sort -->
+        <div class="mt-4">
+          <label class="block text-sm font-medium text-gray-700 mb-2"
+            >Sort by</label
           >
           <select
-            v-model="selectedBrand"
-            class="w-full px-3 py-2.5 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none bg-white text-neutral-900"
+            v-model="sortBy"
+            class="w-full md:w-64 px-3 py-2.5 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none bg-white text-neutral-900"
           >
-            <option value="">All Brands</option>
-            <option v-for="brand in brands" :key="brand" :value="brand">
-              {{ brand }}
-            </option>
+            <option value="">Default</option>
+            <option value="price-asc">Price: Low to High</option>
+            <option value="price-desc">Price: High to Low</option>
+            <option value="name-asc">Name: A to Z</option>
+            <option value="brand-asc">Brand: A to Z</option>
           </select>
         </div>
 
-        <!-- Price Range -->
-        <div>
-          <label class="block text-sm font-medium text-neutral-700 mb-2"
-            >Min Price</label
-          >
-          <input
-            v-model.number="minPrice"
-            type="number"
-            placeholder="$0"
-            min="0"
-            class="w-full px-3 py-2.5 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none bg-white text-neutral-900 placeholder-neutral-500 white-spin"
-          />
-        </div>
-
-        <div>
-          <label class="block text-sm font-medium text-neutral-700 mb-2"
-            >Max Price</label
-          >
-          <input
-            v-model.number="maxPrice"
-            type="number"
-            placeholder="No limit"
-            :min="minPrice || 0"
-            class="w-full px-3 py-2.5 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none bg-white text-neutral-900 placeholder-neutral-500 white-spin"
-          />
-        </div>
-      </div>
-
-      <!-- Sort -->
-      <div class="mt-4">
-        <label class="block text-sm font-medium text-gray-700 mb-2"
-          >Sort by</label
+        <!-- Active Filters -->
+        <div
+          v-if="hasActiveFilters"
+          class="mt-4 pt-4 border-t border-neutral-200"
         >
-        <select
-          v-model="sortBy"
-          class="w-full md:w-64 px-3 py-2.5 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none bg-white text-neutral-900"
-        >
-          <option value="">Default</option>
-          <option value="price-asc">Price: Low to High</option>
-          <option value="price-desc">Price: High to Low</option>
-          <option value="name-asc">Name: A to Z</option>
-          <option value="brand-asc">Brand: A to Z</option>
-        </select>
-      </div>
-
-      <!-- Active Filters -->
-      <div
-        v-if="hasActiveFilters"
-        class="mt-4 pt-4 border-t border-neutral-200"
-      >
-        <div class="flex flex-wrap gap-2">
-          <span class="text-sm text-neutral-600">Active filters:</span>
-          <span
-            v-if="selectedBrand"
-            class="inline-flex items-center gap-1 px-3 py-1 bg-neutral-100 text-primary text-sm rounded-md"
-          >
-            {{ selectedBrand }}
-            <button @click="selectedBrand = ''" class="hover:text-primary/80">
-              <Icon name="i-heroicons-x-mark" class="w-3 h-3" />
-            </button>
-          </span>
-          <span
-            v-if="minPrice"
-            class="inline-flex items-center gap-1 px-3 py-1 bg-neutral-100 text-primary text-sm rounded-md"
-          >
-            Min: ${{ minPrice }}
-            <button @click="minPrice = null" class="hover:text-primary/80">
-              <Icon name="i-heroicons-x-mark" class="w-3 h-3" />
-            </button>
-          </span>
-          <span
-            v-if="maxPrice"
-            class="inline-flex items-center gap-1 px-3 py-1 bg-neutral-100 text-primary text-sm rounded-md"
-          >
-            Max: ${{ maxPrice }}
-            <button @click="maxPrice = null" class="hover:text-primary/80">
-              <Icon name="i-heroicons-x-mark" class="w-3 h-3" />
-            </button>
-          </span>
-          <span
-            v-if="searchQuery"
-            class="inline-flex items-center gap-1 px-3 py-1 bg-neutral-100 text-primary text-sm rounded-md"
-          >
-            "{{ searchQuery }}"
-            <button @click="searchQuery = ''" class="hover:text-primary/80">
-              <Icon name="i-heroicons-x-mark" class="w-3 h-3" />
-            </button>
-          </span>
-        </div>
-      </div>
-
-      <!-- No Products State -->
-      <div v-if="!loading && !error && filteredProducts.length === 0" class="bg-white rounded-lg border border-neutral-200 p-12">
-        <div class="flex flex-col items-center justify-center">
-          <Icon name="i-heroicons-inbox" class="w-16 h-16 text-neutral-400 mb-4" />
-          <h3 class="text-xl font-semibold text-neutral-900 mb-2">No products found</h3>
-          <p class="text-neutral-600 mb-4">Try adjusting your filters or search terms</p>
-          <button
-            v-if="hasActiveFilters"
-            @click="clearAllFilters"
-            class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/80 transition-colors"
-          >
-            Clear Filters
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Products Grid -->
-    <div v-if="!loading && !error && filteredProducts.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-      <div
-        v-for="product in filteredProducts"
-        :key="product.id"
-        class="group bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 border border-neutral-200 overflow-hidden"
-      >
-        <!-- Product Image -->
-        <div class="relative aspect-square overflow-hidden bg-white">
-          <img
-            :src="normalizeImage(product.image)"
-            :alt="product.name"
-            class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-            @error="onImageError"
-          />
-          <!-- Wishlist Button -->
-          <button
-            class="absolute top-4 right-4 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-md hover:bg-neutral-100 transition-colors duration-200"
-          >
-            <Icon
-              name="i-heroicons-heart"
-              class="w-5 h-5 text-blue-600 hover:text-yellow-500 transition-colors"
-            />
-          </button>
-        </div>
-
-        <!-- Product Info -->
-        <div class="p-6">
-          <!-- Brand -->
-          <div class="flex items-center justify-between mb-2">
+          <div class="flex flex-wrap gap-2">
+            <span class="text-sm text-neutral-600">Active filters:</span>
             <span
-              class="text-sm font-medium text-primary uppercase tracking-wider"
+              v-if="selectedBrand"
+              class="inline-flex items-center gap-1 px-3 py-1 bg-neutral-100 text-primary text-sm rounded-md"
             >
-              {{ product.brand }}
+              {{ selectedBrand }}
+              <button @click="selectedBrand = ''" class="hover:text-primary/80">
+                <Icon name="i-heroicons-x-mark" class="w-3 h-3" />
+              </button>
             </span>
-            <div class="flex items-center gap-1">
-              <Icon
-                name="i-heroicons-star-solid"
-                class="w-4 h-4 text-primary/60"
-              />
-              <span class="text-sm text-neutral-500">4.8</span>
-            </div>
-          </div>
-
-          <!-- Product Name -->
-          <h3
-            class="text-lg font-semibold text-neutral-900 mb-3 line-clamp-2 leading-tight"
-          >
-            {{ product.name }}
-          </h3>
-
-          <!-- Price and Action -->
-          <div class="flex items-center justify-between">
-            <div class="flex flex-col">
-              <span class="text-2xl font-bold text-primary">
-                ${{ product.price.toLocaleString() }}
-              </span>
-              <span class="text-sm text-neutral-500">Free shipping</span>
-            </div>
-
-            <NuxtLink
-              :to="`/product/${product.id}`"
-              class="inline-flex items-center justify-center px-4 py-2.5 bg-primary hover:bg-primary/80 text-white text-sm font-medium rounded-xl transition-colors duration-200 group-hover:bg-primary"
+            <span
+              v-if="minPrice"
+              class="inline-flex items-center gap-1 px-3 py-1 bg-neutral-100 text-primary text-sm rounded-md"
             >
-              View
-              <Icon name="i-heroicons-arrow-right" class="w-4 h-4 ml-1" />
-            </NuxtLink>
+              Min: ${{ minPrice }}
+              <button @click="minPrice = null" class="hover:text-primary/80">
+                <Icon name="i-heroicons-x-mark" class="w-3 h-3" />
+              </button>
+            </span>
+            <span
+              v-if="maxPrice"
+              class="inline-flex items-center gap-1 px-3 py-1 bg-neutral-100 text-primary text-sm rounded-md"
+            >
+              Max: ${{ maxPrice }}
+              <button @click="maxPrice = null" class="hover:text-primary/80">
+                <Icon name="i-heroicons-x-mark" class="w-3 h-3" />
+              </button>
+            </span>
+            <span
+              v-if="searchQuery"
+              class="inline-flex items-center gap-1 px-3 py-1 bg-neutral-100 text-primary text-sm rounded-md"
+            >
+              "{{ searchQuery }}"
+              <button @click="searchQuery = ''" class="hover:text-primary/80">
+                <Icon name="i-heroicons-x-mark" class="w-3 h-3" />
+              </button>
+            </span>
+          </div>
+        </div>
+
+        <!-- No Products State -->
+        <div
+          v-if="!loading && !error && filteredProducts.length === 0"
+          class="bg-white rounded-lg border border-neutral-200 p-12 mb-8"
+        >
+          <div class="flex flex-col items-center justify-center">
+            <Icon
+              name="i-heroicons-inbox"
+              class="w-16 h-16 text-neutral-400 mb-4"
+            />
+            <h3 class="text-xl font-semibold text-neutral-900 mb-2">
+              No products found
+            </h3>
+            <p class="text-neutral-600 mb-4">
+              Try adjusting your filters or search terms
+            </p>
+            <button
+              v-if="hasActiveFilters"
+              @click="clearAllFilters"
+              class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/80 transition-colors"
+            >
+              Clear Filters
+            </button>
+          </div>
+        </div>
+
+        <!-- Products Grid -->
+        <div
+          v-if="!loading && !error && filteredProducts.length > 0"
+          class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+        >
+          <div
+            v-for="product in filteredProducts"
+            :key="product.id"
+            class="group bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 border border-neutral-200 overflow-hidden"
+          >
+            <!-- Product Image -->
+            <div class="relative aspect-square overflow-hidden bg-white">
+              <img
+                :src="normalizeImage(product.image)"
+                :alt="product.name"
+                class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                @error="onImageError"
+              />
+              <!-- Wishlist Button -->
+              <button
+                class="absolute top-4 right-4 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-md hover:bg-neutral-100 transition-colors duration-200"
+              >
+                <Icon
+                  name="i-heroicons-heart"
+                  class="w-5 h-5 text-blue-600 hover:text-yellow-500 transition-colors"
+                />
+              </button>
+            </div>
+
+            <!-- Product Info -->
+            <div class="p-6">
+              <!-- Brand -->
+              <div class="flex items-center justify-between mb-2">
+                <span
+                  class="text-sm font-medium text-primary uppercase tracking-wider"
+                >
+                  {{ product.brand }}
+                </span>
+                <div class="flex items-center gap-1">
+                  <Icon
+                    name="i-heroicons-star-solid"
+                    class="w-4 h-4 text-primary/60"
+                  />
+                  <span class="text-sm text-neutral-500">4.8</span>
+                </div>
+              </div>
+
+              <!-- Product Name -->
+              <h3
+                class="text-lg font-semibold text-neutral-900 mb-3 line-clamp-2 leading-tight"
+              >
+                {{ product.name }}
+              </h3>
+
+              <!-- Price and Action -->
+              <div class="flex items-center justify-between">
+                <div class="flex flex-col">
+                  <span class="text-2xl font-bold text-primary">
+                    ${{ product.price.toLocaleString() }}
+                  </span>
+                  <span class="text-sm text-neutral-500">Free shipping</span>
+                </div>
+
+                <NuxtLink
+                  :to="`/product/${product.id}`"
+                  class="inline-flex items-center justify-center px-4 py-2.5 bg-primary hover:bg-primary/80 text-white text-sm font-medium rounded-xl transition-colors duration-200 group-hover:bg-primary"
+                >
+                  View
+                  <Icon name="i-heroicons-arrow-right" class="w-4 h-4 ml-1" />
+                </NuxtLink>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -421,7 +446,7 @@ async function fetchProducts() {
 
     const res: any = await request("/api/products/", {
       method: "GET",
-      query: params
+      query: params,
     });
 
     // Handle the paginated response format from our v1 API
