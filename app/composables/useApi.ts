@@ -16,6 +16,40 @@ function parseError(e: any) {
   };
 }
 
+function parseResponse(response: any) {
+  // Handle standardized {status, code, data} format
+  if (response && typeof response === 'object') {
+    // New standardized format
+    if ('status' in response && 'code' in response && 'data' in response) {
+      return {
+        success: response.status === 'success',
+        code: response.code,
+        data: response.data,
+        message: response.message,
+        raw: response
+      };
+    }
+
+    // Legacy format where response itself is the data
+    return {
+      success: true,
+      code: 200,
+      data: response,
+      message: undefined,
+      raw: response
+    };
+  }
+
+  // Non-object responses
+  return {
+    success: true,
+    code: 200,
+    data: response,
+    message: undefined,
+    raw: response
+  };
+}
+
 export function useApi() {
   const config = useRuntimeConfig();
   const baseURL = config.public?.apiBase || "http://localhost:8000";
@@ -81,8 +115,11 @@ export function useApi() {
 
     try {
       const res = await $fetch<T>(baseURL + endpoint, opts);
-      console.log(res);
-      return res;
+      const parsedRes = parseResponse(res);
+      console.log('API Response:', parsedRes);
+
+      // Return the data from standardized response
+      return parsedRes.data;
     } catch (e: any) {
       const { status, data } = parseError(e);
 
@@ -98,7 +135,8 @@ export function useApi() {
             // mark as retry to avoid infinite loops
             opts._retry = true;
             const retryRes = await $fetch<T>(baseURL + endpoint, opts);
-            return retryRes;
+            const parsedRetryRes = parseResponse(retryRes);
+            return parsedRetryRes.data;
           }
         } catch (refreshErr: any) {
           // pass through original 401 if refresh failed
@@ -107,11 +145,21 @@ export function useApi() {
         }
       }
 
-      // Normalize error envelope expected by frontend
-      if (data && data.status === "error") {
-        // Backend should handle all errors properly and return clean messages
-        const errorMsg = data.data || data;
-        throw { status: status || 400, data: errorMsg };
+      // Handle standardized error responses
+      if (data && typeof data === 'object') {
+        // New standardized error format
+        if (data.status === "error") {
+          const errorMsg = data.data || data.message || "Request failed";
+          throw { status: data.code || status || 400, data: errorMsg };
+        }
+
+        // Validation errors with field details
+        if (data.details && Array.isArray(data.details)) {
+          const fieldErrors = data.details.map((err: any) =>
+            `${err.field}: ${err.message}`
+          ).join(', ');
+          throw { status: data.code || 422, data: fieldErrors || "Validation failed" };
+        }
       }
 
       // Handle different status codes with appropriate messages

@@ -81,15 +81,37 @@ const { login: apiLogin } = useAuth();
 
 async function onSubmit({ data }: { data: typeof state.value }) {
   try {
-    await apiLogin(data.username, data.password);
+    console.log("Attempting login with username:", data.username);
+    const response = await apiLogin(data.username, data.password);
+    console.log("Login successful, response:", response);
+
     toast.add({ title: "Login successful", color: "success" });
     router.push("/");
   } catch (e: any) {
-    const errorMsg = e?.data?.data || e?.data?.detail || e?.message || "Login failed";
+    console.error("Login error details:", e);
+
+    // Improved error message extraction
+    let errorMsg = "Login failed";
+
+    if (e?.response?.data?.detail) {
+      errorMsg = e.response.data.detail;
+    } else if (e?.data?.data) {
+      errorMsg = e.data.data;
+    } else if (e?.data?.error) {
+      errorMsg = e.data.error;
+    } else if (e?.message) {
+      errorMsg = e.message;
+    } else if (typeof e === 'string') {
+      errorMsg = e;
+    } else {
+      errorMsg = "An unexpected error occurred during login";
+    }
+
     toast.add({
       title: "Login failed",
       description: errorMsg,
       color: "error",
+      timeout: 5000, // 5 seconds timeout
     });
   }
 }

@@ -36,7 +36,8 @@ export function useOrdersApi() {
     if (params.limit != null) q.set("limit", String(params.limit));
     const qs = q.toString();
     const url = "/api/orders" + (qs ? `?${qs}` : "");
-    return request<OrderOut[]>(url, { method: "GET" });
+    // API now returns paginated response with items array
+    return request<{ items: OrderOut[], total: number, page: number, size: number, pages: number }>(url, { method: "GET" });
   }
 
   function getOrder(order_id: number) {
@@ -57,13 +58,13 @@ export function useOrdersApi() {
   function adminListOrders(params: AdminListParams = {}) {
     const q = new URLSearchParams();
     if (params.status) q.set("status", params.status);
-    console.log(params.user_id);
     if (params.user_id) q.set("user_id", String(params.user_id));
     if (params.skip != null) q.set("skip", String(params.skip));
     if (params.limit != null) q.set("limit", String(params.limit));
     const qs = q.toString();
     const url = "/api/orders/admin/orders" + (qs ? `?${qs}` : "");
-    return request<OrderOut[]>(url, { method: "GET" });
+    // API now returns paginated response with items array
+    return request<{ items: OrderOut[], total: number, page: number, size: number, pages: number }>(url, { method: "GET" });
   }
 
   function adminUpdateOrderStatus(

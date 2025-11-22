@@ -65,6 +65,18 @@ export function useCheckoutApi() {
     return request<CartOut>("/api/cart", { method: "GET" });
   }
 
+  // Add product listing function for paginated products
+  function getProducts(params?: { q?: string; brand?: string; skip?: number; limit?: number }) {
+    const q = new URLSearchParams();
+    if (params?.q) q.set("q", params.q);
+    if (params?.brand) q.set("brand", params.brand);
+    if (params?.skip != null) q.set("skip", String(params.skip));
+    if (params?.limit != null) q.set("limit", String(params.limit));
+    const qs = q.toString();
+    const url = "/api/products" + (qs ? `?${qs}` : "");
+    return request<{ items: ProductList[], total: number, page: number, size: number, pages: number }>(url, { method: "GET" });
+  }
+
   function createOrder(payload: OrderCreate) {
     return request<OrderOut>("/api/orders", {
       method: "POST",
@@ -95,6 +107,7 @@ export function useCheckoutApi() {
 
   return {
     getCart,
+    getProducts,
     createOrder,
     createPaymentSession,
     getOrder,

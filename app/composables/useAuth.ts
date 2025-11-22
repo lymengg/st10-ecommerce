@@ -58,21 +58,36 @@ export function useAuth() {
     formData.append("username", username);
     formData.append("password", password);
 
-    const res: any = await request("/api/auth/login", {
-      method: "POST",
-      body: formData,
-    });
-
-    if (res.status === "success") {
-      await login(res.data.access_token, res.data.refresh_token, {
-        username: res.data.username,
-        role: res.data.role,
-        email: res.data.email,
-        phone_number: res.data.phone_number,
+    try {
+      // The request function now returns the data field from the standardized response
+      const tokenData: any = await request("/api/auth/login", {
+        method: "POST",
+        body: formData,
       });
-      return res;
+
+      // Successful login - API now returns standardized format
+      if (tokenData && tokenData.access_token) {
+        await login(
+          tokenData.access_token,
+          tokenData.refresh_token,
+          {
+            username: tokenData.username || username, // fallback if username not in response
+            role: tokenData.role || "user",
+            email: tokenData.email || "",
+            phone_number: tokenData.phone_number || "",
+          }
+        );
+        return tokenData;
+      } else {
+        // Failed login - throw an error
+        console.error("Login failed - invalid response format:", tokenData);
+        throw { status: 400, data: "Invalid login response format" };
+      }
+    } catch (error) {
+      // Network or other error
+      console.error("Login network error:", error);
+      throw error;
     }
-    throw res;
   }
 
   async function register(payload: {
@@ -81,47 +96,56 @@ export function useAuth() {
     email: string;
     phone_number: string;
   }) {
-    const res: any = await request("/api/auth/register", {
+    const tokenData: any = await request("/api/auth/register", {
       method: "POST",
       body: payload,
       headers: { "Content-Type": "application/json" },
     });
 
-    if (res.status === "success") {
-      return res;
+    // Auto-login after successful registration
+    if (tokenData && tokenData.access_token) {
+      await login(
+        tokenData.access_token,
+        tokenData.refresh_token,
+        {
+          username: tokenData.username || payload.username,
+          role: tokenData.role || "user",
+          email: tokenData.email || payload.email,
+          phone_number: tokenData.phone_number || payload.phone_number,
+        }
+      );
+      return tokenData;
     }
-    throw res;
+    return tokenData;
   }
 
   async function refresh() {
     const refreshToken =
       typeof window !== "undefined" ? localStorage.getItem(REFRESH_KEY) : null;
     if (!refreshToken) throw new Error("No refresh token");
-    const res: any = await request("/api/auth/refresh", {
+
+    const tokenData: any = await request("/api/auth/refresh", {
       method: "POST",
       body: { refresh_token: refreshToken },
       headers: { "Content-Type": "application/json" },
     });
-    if (res.status === "success") {
-      if (typeof window !== "undefined") {
-        localStorage.setItem(ACCESS_KEY, res.data.access_token);
-        if (res.data.refresh_token)
-          localStorage.setItem(REFRESH_KEY, res.data.refresh_token);
-      }
-      return res;
+
+    if (typeof window !== "undefined") {
+      localStorage.setItem(ACCESS_KEY, tokenData.access_token);
+      if (tokenData.refresh_token)
+        localStorage.setItem(REFRESH_KEY, tokenData.refresh_token);
     }
-    throw res;
+    return tokenData;
   }
 
   async function profile() {
-    const res: any = await request("/api/users/me", { method: "GET" });
-    if (res.status === "success") {
-      if (typeof window !== "undefined")
-        localStorage.setItem("user", JSON.stringify(res.data));
-      user.value = res.data;
+    const userData: any = await request("/api/auth/profile", { method: "GET" });
+    if (typeof window !== "undefined") {
+      localStorage.setItem("user", JSON.stringify(userData));
+      user.value = userData;
       isAuthenticated.value = true;
     }
-    return res;
+    return userData;
   }
 
   async function updateProfile(payload: {
@@ -129,29 +153,28 @@ export function useAuth() {
     email?: string;
     phone_number?: string;
   }) {
-    const res: any = await request("/api/users/me", {
+    const userData: any = await request("/api/users/me", {
       method: "PUT",
       body: payload,
       headers: { "Content-Type": "application/json" },
     });
-    if (res.status === "success") {
-      if (typeof window !== "undefined")
-        localStorage.setItem("user", JSON.stringify(res.data));
-      user.value = res.data;
+
+    if (typeof window !== "undefined") {
+      localStorage.setItem("user", JSON.stringify(userData));
+      user.value = userData;
     }
-    return res;
+    return userData;
   }
 
   async function changePassword(
     current_password: string,
     new_password: string
   ) {
-    const res: any = await request("/api/auth/change-password", {
+    return await request("/api/auth/change-password", {
       method: "POST",
       body: { current_password, new_password },
       headers: { "Content-Type": "application/json" },
     });
-    return res;
   }
 
   // Initialize from storage
